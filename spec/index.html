@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <title>The did:bnb Method v1.0</title>
+  <style>
+      #instructions {
+          border: dashed 1px black;
+          padding: 1em;
+          background-color: #d0d0d0;
+      }
+
+      .replace-me {
+          font-style: italic;
+          color: magenta
+      }
+  </style>
+  <script
+      src='https://www.w3.org/Tools/respec/respec-w3c'
+      class='remove'></script>
+  <script class='remove'>
+      var respecConfig = {
+          specStatus: "ED",
+
+          latestVersion: null,
+
+          shortName: "did-method-bnb",
+          // subtitle for the spec
+          subtitle: "A DID Method on the BNB Smart Chain",
+          editors: [{
+              name: "Martin Riedel",
+              company: "Identity.com",
+              url: "https://identity.com",
+          }
+          ],
+          processVersion: 2017,
+          github: "https://github.com/identity-com/bnb-did",
+          includePermalinks: false,
+
+          edDraftURI: "https://g.identity.com/bnb-did",
+          inlineCSS: true
+      };
+  </script>
+</head>
+<body>
+<section class="introductory">
+  <h2>About</h2>
+  <p>The BNB DID method specification conforms to the requirements specified in the DID specification
+    currently published by the W3C Credentials Community Group. For more information about DIDs and
+    DID method specifications, please see the <a
+        href="https://github.com/WebOfTrustInfo/rebooting-the-web-of-trust-fall2017/blob/master/topics-and-advance-readings/did-primer.md"
+        target="_blank">DID Primer</a> and <a href="https://w3c-ccg.github.io/did-spec/">DID Spec</a>.</p>
+</section>
+<section id='abstract'>
+  <p>
+    BNB Smart Chain is a high-speed, low-fee public ledger based on a combination of Proof of Authority (PoA) and
+    delegated Proof of Stake (dPoS). The BNB DID method is a method for storing DIDs and managing DID documents on BNB
+    Smart Chain, built and maintained by Identity.com in conjunction with BNB Smart Chain.
+  </p>
+</section>
+<section id='sotd'>
+  <p>&nbsp;
+  </p>
+</section>
+<section>
+  <h2>BNB DID Method</h2>
+  <p>The namestring that shall identify this DID method is: <code>bnb</code></p>
+  <p>A DID that uses this method MUST begin with the following prefix: <code>did:bnb</code>.
+    Per the DID specification, this string MUST be in lowercase. The remainder of the DID, after the prefix,
+    is the NSI specified below.</p>
+</section>
+<section>
+  <h2>Target System(s)</h2>
+  <p>This DID method applies to the BNB Smart Chain mainnet network as well as the testnet and devnet clusters.</p>
+</section>
+<section>
+  <h2>Namespace Specific Identifier (NSI)</h2>
+  <p>
+    The BNB DID scheme is defined by the following <a
+      href="https://www.rfc-editor.org/rfc/rfc5234.txt">ABNF</a>:<br><br>
+    <code>
+      bnb-did = "did:bnb" *(":" network) ":" idstring<br>
+      idstring = "0x" 40*HEXDIG<br>
+      network = "testnet" / "devnet" / "localnet" <br>
+    </code><br>
+    All BNB DID identifier elements are hex encoded using the 20-byte key of an ethereum address. Ideally,
+    the given address is a <a href="https://eips.ethereum.org/EIPS/eip-55">checksum-address</a> where uppercase and
+    lowercase lettered are mixed. However, a unique did:bnb identifier is ALWAYS represented by checksum-address
+    and therefore a checksum and a lower-case representation of a did:bnb DO represent the same identifier.
+    <br>
+    <br>
+    Optionally, a network may be specified to indicate which BNB Smart Chain cluster contains the DID document.
+  </p>
+  <h3>Identifier Generation Method</h3>
+  <p>The 20-byte address underlying a BNB DID is generated from the following deterministic algorithm.</p>
+    <ol>
+        <li>Generate a Secp256k1 Keypair</li>
+        <li>Hash the public key using the Keccak-256 algorithm</li>
+        <li>Take the last 20 bytes of the hash</li>
+        <li>Encode the 20 bytes as a hex string</li>
+        <li>Apply ERC-55 checksum encoding</li>
+    </ol>
+  <p>
+    The program ID is <code>TBD</code> on all networks.
+  </p>
+  <p>A convenient regex to match <code>BNB</code> DID identifiers is: <br><br>
+    <code>^[1-9A-HJ-NP-Za-km-z]{40,48}$</code><br><br>
+    A convenient regex to match the entire DID string is:<br><br>
+    <code>^did\:bnb(\:(testnet|devnet|localnet))?\:0x[a-fA-F0-9]{40}$</code>
+  </p>
+  <h3>Examples</h3>
+  <p>Valid <code>BNB</code> DIDs might be:
+  <ul>
+    <li><code>did:bnb:0x333CAB36157F7AFEAA8e50eF2Edc5e945B0108e5</code></li>
+    <li><code>did:bnb:devnet:0xe1E6cAE5f9929f6A06eA0843FddCFFF6920D1A35</code></li>
+  </ul>
+  </p>
+</section>
+<section>
+  <h2>Operations</h2>
+  The following section outlines the DID operations for the did:bnb method.
+  <h3 id="create">Create (Register)</h3>
+  <p>
+    A BNB DID can be created by combining the <code>did:bnb(:network)</code> prefix with the <code>AUTHORITY</code>.
+    An initial 'sparse' DID document can be generated without the need to register it on the BNB Smart Chain blockchain:
+  <pre>
+{
+    "@context": [
+        "https://w3id.org/did/v1.0",
+        "https://w3id.org/bnb/v1"
+    ],
+    "id": "did:bnb:IDENTIFIER",
+    "verificationMethod": [
+        {
+            "id": "did:bnb:IDENTIFIER#key1",
+            "type": "Ed25519VerificationKey2018",
+            "controller": "did:bnb:IDENTIFIER",
+            "blockchainAccountId": "IDENTIFIER"
+        }
+    ],
+    "authentication": [
+        "did:bnb:IDENTIFIER#key1"
+    ],
+    "assertionMethod": [],
+    "keyAgreement": [],
+    "capabilityInvocation": [
+        "did:bnb:IDENTIFIER#key1"
+    ],
+    "capabilityDelegation": [],
+    "service": [],
+}
+</pre>
+  <p>
+    where:
+    <code>IDENTIFIER</code> is the DID method identifier derived from the authority.</p>
+  <p>
+    Changing the default data of a BNB DID involves submitting a transaction to the BNB Smart Chain blockchain calling the
+    "Initialize" instruction
+    on the BNB Smart Contract. The only required input to this program is the address of the 'authority', that is, the
+    initial owner of the DID.
+
+    The transaction must be signed by the address owner.</p>
+  <p>
+
+    The authority is a special key from which the DID is derived. It is always present in the
+    <a href="https://www.w3.org/TR/did-core/#dfn-verification-method">verification methods</a> list,
+    and by default is added as the only key in the
+    <a href="https://www.w3.org/TR/did-core/#capability-invocation">capabilityInvocations</a>
+    list, indicating that it is permitted to change
+    the DID Document contents. It can, however be removed from the list by submitting an update instruction where the
+    capabilityInvocation list is explicitly set (e.g. to the empty list or some other list of keys).
+
+  </p>
+  <p>An optional additional field may be added, containing additional document data, such as service
+    endpoints or additional keys.
+  </p>
+  <h4 id="fees">Fees</h4>
+  <p>Updating a BNB DID on BNB Smart Chain incurs fees, imposed by the BNB Smart Chain blockchain
+    and paid in the chain's native token, BNB.</p>
+  <ul>
+    <li><strong>Transaction Fee:</strong>
+      <p>
+        Each action (register, update, delete) incurs a transaction fee.
+        This fee is independent of the size of the document.
+      </p>
+    </li>
+  </ul>
+  <p>By default, the fee payer is the owner of the DID that will be created. However, the implementation supports
+    a separate fee payer, that will incur the charges of registration/updating/deletion of the DID without having
+    any permissions on the DID itself. This allows a central body to generate DIDs for its customers, without
+    requiring them to have a BNB balance.</p>
+  <h3>Read (Resolve)</h3>
+  <p>A BNB DID record can be looked up on BNB Smart Chain, by stripping the did:bnb: prefix from the DID, and
+    network identifier if present, and looking up the resultant account on-chain. If no data is present on-chain,
+    the generated DID document (<a href="#create">see above</a>) should be returned.</p>
+  <p>
+    Anyone can query a DID record, by sending the above request.
+    The response contains the DID document,
+    encoded in a binary form defined by the <a href="https://borsh.io/">Borsh</a>
+    serialization library. A client library is required to convert it to a DID Document.
+    The schema for this format is defined in the
+    <a href="#reference-implementations">reference implementation client.</a>
+  </p>
+  <h3>Update (Replace)</h3>
+  <p>The DID can be updated by invoking the matching Smart Contract function on the BNB Smart Chain blockchain.
+    This transaction must be signed by a key that is referenced in the
+    <strong>capabilityInvocation</strong> property.
+  </p>
+  <p>
+    Each value is expected to be calculated by a client library, rather than calculated manually
+    (see the <a href="#reference-implementations">reference implementation</a> for details).
+  </p>
+  <p>
+    For example, adding the following DID sub-document:
+  <pre>
+{
+    "service": [
+        {
+            "id": "did:bnb:IDENTIFIER#agent",
+            "type": "AgentService",
+            "serviceEndpoint": "https://hub.myhub.com/did:bnb:IDENTIFIER/agent"
+        }, {
+            "id": "did:bnb:ygGfLvAyuRymPNv2fJDK1ZMpdy59m8cV5dak6A8uHKa#messages",
+            "type": "MessagingService",
+            "serviceEndpoint": "https://hub.myhub.com/did:bnb:IDENTIFIER/messages"
+        }
+    ]
+}
+
+</pre>
+  to the above document, results in:
+  <pre>
+{
+    "@context": [
+        "https://w3id.org/did/v1.0",
+        "https://w3id.org/bnb/v1"
+    ],
+    "id": "did:bnb:IDENTIFIER",
+    "verificationMethod": [
+        {
+            "id": "did:bnb:IDENTIFIER#key1",
+            "type": "Ed25519VerificationKey2018",
+            "controller": "did:bnb:IDENTIFIER",
+            "publicKeyBase58": "AUTHORITY"
+        }
+    ],
+    "authentication": [
+        "did:bnb:IDENTIFIER#key1"
+    ],
+    "assertionMethod": [],
+    "keyAgreement": [],
+    "capabilityInvocation": [
+        "did:bnb:IDENTIFIER#key1"
+    ],
+    "capabilityDelegation": [],
+    "service": [
+        {
+            "id": "did:bnb:IDENTIFIER#agent",
+            "type": "AgentService",
+            "serviceEndpoint": "https://hub.myhub.com/did:bnb:IDENTIFIER/agent"
+        }, {
+            "id": "did:bnb:ygGfLvAyuRymPNv2fJDK1ZMpdy59m8cV5dak6A8uHKa#messages",
+            "type": "MessagingService",
+            "serviceEndpoint": "https://hub.myhub.com/did:bnb:IDENTIFIER/messages"
+        }
+    ],
+    "publicKey": [
+        {
+            "id": "did:bnb:IDENTIFIER#key1",
+            "type": "Ed25519VerificationKey2018",
+            "controller": "did:bnb:IDENTIFIER",
+            "publicKeyBase58": "AUTHORITY"
+        }
+    ]
+}
+
+</pre>
+
+  Only an AUTHORITY key can make this change,
+  as that is the only one referenced inside <strong>capabilityInvocation</strong>.
+  <br/>
+  An update can add an entry to or remove an entry from the capabilityInvocation list.
+  <br/>
+  As with creation, an update transaction can specify a separate fee payer account to pay the transaction fee.
+  <h3>Delete (Revoke)</h3>
+  <p>A BNB DID can be irreversibly deleted or revoked.</p>
+  <p> To revoke the document of the DID, the owner of
+    the DID should send a transaction with a CloseAccount instruction.
+  </p>
+  <p>When a BNB DID has been deleted, the DID document will resolve to the <a href="#create">generated</a> version.</p>
+</section>
+
+<section>
+  <h2>Security Considerations</h2>
+  <h3>Recovery From Key Compromise</h3>
+
+  <p>It is recommended, although not enforced by did:bnb, that more than one key be included in the
+    <strong>capabilityInvocation</strong> list. This allows a second trusted key to remove the reference
+    to the first in the event of a key compromise. It is also recommended to include additional verification
+    methods and keys that have permissions to perform actions with the DID (such as sign messages),
+    but do not have permissions to update the document itself.
+    This allows the capabilityInvocation keys to be stored in cold-storage, and only used when a key
+    needs to be revoked. This protects against malicious rewriting of the document to add attackers' keys.</p>
+</section>
+
+<section>
+  <h2>Privacy Considerations</h2>
+  <div>
+    DIDs should be assumed to be pseudonymous. Since the DID is registered on a decentralized ledger,
+    it is not fully revocable, and this risk should be recognised by users of the DID method. As with all
+    public pseudonymous persistent identifiers, there exists a risk of correlation when associating any other
+    information with the DID in a way that exposes this information publicly.
+  </div>
+</section>
+
+<section id="reference-implementations">
+  <h2>Reference Implementations</h2>
+  It is expected that integrators of the BNB DID method do not interact with the BNB Smart Chain directly,
+  but use a client library.
+
+  A reference implementation, written in Typescript, is available at
+  <a href="https://github.com/identity-com/bnb-did" target="_blank">https://github.com/identity-com/bnb-did</a>
+  and as <a href="https://www.npmjs.com/package/@identity.com/TBD" target="_blank">an NPM library (TBD)</a>
+</section>
+<section id='conformance'></section>
+</body>
+</html>
