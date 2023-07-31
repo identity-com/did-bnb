@@ -50,6 +50,21 @@ contract DIDRegistry is DIDRegistryEvents {
         uint160 keyData; // Key data to match the given verification type
     }
 
+    struct Service {
+        bytes32 fragment;
+        string service_type;
+        string service_endpoint;
+    }
+
+    struct DidDocument {
+        string id;
+        VerificationMethod[] verificationMethods;
+        Service[] services;
+        address[] nativeControllers;
+    }
+
+    mapping(string => DidDocument) private didDocuments;
+
 
     function _getDefaultVerificationMethod(address owner) internal pure returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
