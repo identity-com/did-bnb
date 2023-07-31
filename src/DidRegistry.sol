@@ -61,18 +61,69 @@ contract DIDRegistry is DIDRegistryEvents {
         VerificationMethod[] verificationMethods;
         Service[] services;
         address[] nativeControllers;
+        string[] assertionMethod;
+        string[] authentication;
+        string[] capabilityInvocation;
+        string[] capabilityDelegation;
     }
 
     mapping(string => DidDocument) private didDocuments;
 
 
-    function _getDefaultVerificationMethod(address owner) internal pure returns(VerificationMethod memory verificationMethod) {
+    function resolveDid(address authorityKey) public pure returns(string memory) {
+        return string(bytes.concat("did:bnb:", bytes20(authorityKey)));
+    }
+
+    function resolveDidDocument(string calldata didId) external view returns(DidDocument memory) {
+        DidDocument memory didDocument = didDocuments[didId];
+
+        if(bytes(didDocument.id).length != 0) {
+            return didDocument;
+        }
+
+        DidDocument memory defaultDidDocument = _getDefaultDidDocument(didId);
+        return defaultDidDocument;
+    }
+
+    function _doesDidDocumentExist(address authorityKey) internal view returns(bool) {
+        DidDocument memory didDocument = didDocuments[resolveDid(authorityKey)];
+        return bytes(didDocument.id).length != 0;
+    }
+
+    function _getDefaultVerificationMethod(address authorityKey) internal pure returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
             fragment: 'default',
-            flags: uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF),
+            flags: 
+                uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | 
+                uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED),
             methodType: VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
-            keyData: uint160(owner)
+            keyData: uint160(authorityKey)
         });
+    }
+
+    function _getAddressFromDid(string memory didId) internal pure returns (address) {
+        // TODO make more generic to resolve address from different identifiers (ex did:bnb and did:dnd:testnet)
+        return address(uint160(uint256(bytes32(bytes(didId)))));
+    }
+
+    function _getDefaultDidDocument(string memory didId) internal pure returns(DidDocument memory) {
+        address authorityKey = _getAddressFromDid(didId);
+        
+        DidDocument memory defaultDidDocument;
+
+        defaultDidDocument.id = didId;
+
+        defaultDidDocument.verificationMethods = new VerificationMethod[](1);
+        defaultDidDocument.verificationMethods[0] = _getDefaultVerificationMethod(authorityKey);
+
+        defaultDidDocument.authentication = new string[](1);
+        defaultDidDocument.authentication[0] = string.concat(didId, "#key1");
+
+        defaultDidDocument.capabilityInvocation = new string[](1);
+        defaultDidDocument.capabilityInvocation[0] = string.concat(didId, "#key1");
+
+
+        return defaultDidDocument;
     }
 
 }
