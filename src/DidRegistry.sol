@@ -2,31 +2,9 @@
 
 pragma solidity ^0.8.13;
 
-contract DIDRegistryEvents {
-    event DIDOwnerChanged(
-        address indexed identity,
-        address owner,
-        uint previousChange
-    );
+import "./IDidRegistry.sol";
 
-    event DIDDelegateChanged(
-        address indexed identity,
-        bytes32 delegateType,
-        address delegate,
-        uint validTo,
-        uint previousChange
-    );
-
-    event DIDAttributeChanged(
-        address indexed identity,
-        bytes32 name,
-        bytes value,
-        uint validTo,
-        uint previousChange
-    );
-}
-
-contract DIDRegistry is DIDRegistryEvents {
+contract DIDRegistry is IDidRegistry {
 
     enum VerificationMethodType { 
         EcdsaSecp256k1RecoveryMethod // Verification Method for For 20-bytes Ethereum Keys
