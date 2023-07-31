@@ -148,6 +148,18 @@ contract DIDRegistry is DIDRegistryEvents {
          */
     }
 
+    function addNativeController(string calldata didId, address controller) public returns(bool) {
+        // - Verify message sender has permission to add a controller
+        // - Check for duplicates
+        // - Add controller to did
+    }
+
+    function removeNativeController(string calldata didId, address controller) public returns(bool) {
+        // - Verify message sender has permission to delete a controller
+        // - Authentication key with ownership should not be able to be removed
+        // - Delete controller from did
+    }
+
     function _doesDidDocumentExist(address authorityKey) internal view returns(bool) {
         DidDocument memory didDocument = didDocuments[resolveDid(authorityKey)];
         return bytes(didDocument.id).length != 0;
