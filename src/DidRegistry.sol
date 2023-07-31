@@ -69,7 +69,7 @@ contract DIDRegistry is DIDRegistryEvents {
 
     mapping(string => DidDocument) private didDocuments;
 
-    //////// Fetching/Reading Did data /////////////
+    //////// Fetching/Resolving Did /////////////
     function resolveDid(address authorityKey) public pure returns(string memory) {
         return string(bytes.concat("did:bnb:", bytes20(authorityKey)));
     }
@@ -85,6 +85,8 @@ contract DIDRegistry is DIDRegistryEvents {
         return defaultDidDocument;
     }
 
+
+    //////// Create/Update Did ////////////
     // TODO Should external calls explixitly create did documents or should they automatically be created upon updates? 
     function createDidDocument(address authorityKey) external returns(string memory didId) {
         require(!_doesDidDocumentExist(authorityKey), "Did document already exist");
@@ -100,6 +102,50 @@ contract DIDRegistry is DIDRegistryEvents {
         didDocument.capabilityInvocation.push(loadedDocument.capabilityInvocation[0]);
 
         return didId;
+    }
+
+    function addVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) public returns(bool) {
+        // - Verify message sender has permission to update
+        // - Add verification method to did
+
+        /**
+            Questions: 
+            - Should duplicates be allowed?
+            - Are the authentication keys the only eligible actors that can invoke an update?
+         */
+    }
+
+    function removeVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) public returns(bool) {
+        // - Verify message sender has permission to remove verification method
+        // - Verify that there will still be at least 1 verification method after removal
+        // - If method is a recovery key verify that msg.sender has the authority to remove it
+        // - Delete verification method from did
+
+        /**
+            Questions: 
+            - Are the authentication keys the only eligible actors that can invoke a removal?
+         */
+    }
+
+    function addService(string calldata didId, Service calldata service) public returns(bool) {
+        // - Verify message sender has permission to update
+        // - Add service method to did
+
+        /**
+            Questions: 
+            - Should duplicates be allowed?
+            - Are the authentication keys the only eligible actors that can invoke an update?
+         */
+    }
+
+    function removeService(string calldata didId, Service calldata service) public returns(bool) {
+        // - Verify message sender has permission to delete
+        // - Delete service method from did
+
+        /**
+            Questions: 
+            - Are the authentication keys the only eligible actors that can invoke a removal?
+         */
     }
 
     function _doesDidDocumentExist(address authorityKey) internal view returns(bool) {
