@@ -69,7 +69,7 @@ contract DIDRegistry is DIDRegistryEvents {
 
     mapping(string => DidDocument) private didDocuments;
 
-
+    //////// Fetching/Reading Did data /////////////
     function resolveDid(address authorityKey) public pure returns(string memory) {
         return string(bytes.concat("did:bnb:", bytes20(authorityKey)));
     }
@@ -83,6 +83,23 @@ contract DIDRegistry is DIDRegistryEvents {
 
         DidDocument memory defaultDidDocument = _getDefaultDidDocument(didId);
         return defaultDidDocument;
+    }
+
+    // TODO Should external calls explixitly create did documents or should they automatically be created upon updates? 
+    function createDidDocument(address authorityKey) external returns(string memory didId) {
+        require(!_doesDidDocumentExist(authorityKey), "Did document already exist");
+
+        didId = resolveDid(authorityKey);
+
+        DidDocument memory loadedDocument = _getDefaultDidDocument(didId);
+        DidDocument storage didDocument = didDocuments[didId];
+
+        didDocument.id = didId;
+        didDocument.verificationMethods.push(loadedDocument.verificationMethods[0]);
+        didDocument.authentication.push(loadedDocument.authentication[0]);
+        didDocument.capabilityInvocation.push(loadedDocument.capabilityInvocation[0]);
+
+        return didId;
     }
 
     function _doesDidDocumentExist(address authorityKey) internal view returns(bool) {
