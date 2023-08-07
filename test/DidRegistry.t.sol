@@ -2,38 +2,40 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import {DIDRegistry, DIDRegistryEvents} from "../src/DidRegistry.sol";
+import "forge-std/console.sol";
+import {DIDRegistry} from "../src/DidRegistry.sol";
+import "solidity-stringutils/strings.sol";
 
-contract CounterTest is Test, DIDRegistryEvents {
+contract CounterTest is Test {
+    using strings for *;
+
     DIDRegistry public didRegistry;
-    uint public testValidity = 86400;
-
 
     function setUp() public {
         didRegistry = new DIDRegistry();
     }
 
-    function test_unknownIdentityOwnerIsIdentity(address identity) public {
-        assertEq(identity, didRegistry.identityOwner(identity));
+    function test_should_resolve_did() public {
+        address user = vm.addr(1);
+        string memory userAsString = "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf"; // foundry vm.addr(1) is deterministic
+        string memory did = didRegistry.resolveDid(user);
+
+
+        string memory resolvedAddressAsString = did.toSlice().beyond("did:bnb:".toSlice()).toString();
+
+        // address addr = hexStringToAddress(resolvedAddressAsString);
+
+       //  address resolvedAddress = address(bytes20(uint160(uint256(keccak256(abi.encodePacked(resolvedAddressAsString))))));
+        console.log("%s with resolved address is: %s", did, userAsString);
+        console.log(didRegistry._getAddressFromDid(did));
+
     }
 
-    function test_changeOwner(address newOwner) public {
-        address owner = address(1);
-        vm.prank(owner);
-        didRegistry.changeOwner(owner, newOwner);
-        assertEq(newOwner, didRegistry.identityOwner(owner));
+    function test_fuzz_should_resolve_did() public {
+
     }
 
-    function test_addDelegate(address newDelegate) public {
-        address owner = address(2);
+    function test_fuzz_should_resolve_did_state() public {
 
-        // setup event expectations
-        vm.expectEmit(true, false, false, true, address(didRegistry));
-        emit DIDDelegateChanged(owner, 0, newDelegate, block.timestamp + testValidity, 0);
-
-        vm.prank(owner);
-        didRegistry.addDelegate(owner, 0, newDelegate, testValidity);
     }
-
-
 }

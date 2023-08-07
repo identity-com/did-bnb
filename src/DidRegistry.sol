@@ -3,8 +3,10 @@
 pragma solidity ^0.8.20;
 
 import "./IDidRegistry.sol";
+import "solidity-stringutils/strings.sol";
 
 contract DIDRegistry is IDidRegistry {
+    using strings for *;
 
     bytes16 private constant _HEX_DIGITS = "0123456789abcdef";
     uint8 private constant _ADDRESS_LENGTH = 20;
@@ -90,9 +92,34 @@ contract DIDRegistry is IDidRegistry {
         return defaultDidState;
     }
 
-    function _getAddressFromDid(string memory didId) internal pure returns (address) {
+    function _getAddressFromDid(string memory didId) public pure returns (address) {
         // TODO make more generic to resolve address from different identifiers (ex did:bnb and did:dnd:testnet)
-        return address(uint160(uint256(bytes32(bytes(didId)))));
+        string memory resolvedAddressAsString = didId.toSlice().beyond("did:bnb:".toSlice()).toString();
+        bytes memory tmp = bytes(resolvedAddressAsString);
+        uint160 iaddr = 0;
+        uint160 b1;
+        uint160 b2;
+        for (uint i = 2; i < 2 + 2 * 20; i += 2) {
+            iaddr *= 256;
+            b1 = uint160(uint8(tmp[i]));
+            b2 = uint160(uint8(tmp[i + 1]));
+            if ((b1 >= 97) && (b1 <= 102)) {
+                b1 -= 87;
+            } else if ((b1 >= 65) && (b1 <= 70)) {
+                b1 -= 55;
+            } else if ((b1 >= 48) && (b1 <= 57)) {
+                b1 -= 48;
+            }
+            if ((b2 >= 97) && (b2 <= 102)) {
+                b2 -= 87;
+            } else if ((b2 >= 65) && (b2 <= 70)) {
+                b2 -= 55;
+            } else if ((b2 >= 48) && (b2 <= 57)) {
+                b2 -= 48;
+            }
+            iaddr += (b1 * 16 + b2);
+        }
+        return address(iaddr);
     }
 
 
