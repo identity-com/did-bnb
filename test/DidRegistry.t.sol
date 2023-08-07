@@ -29,18 +29,19 @@ contract CounterTest is Test {
 
         DIDRegistry.DidState memory defaultState = didRegistry.resolveDidState(did);
 
-        //Default the didState should be protected and have an ownership proof
+        //Default the didState should be protected and have an ownership proof and is protected
         assertEq(
             defaultState.verificationMethods[0].flags, 
             uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED)
         );
         assertEq(defaultState.verificationMethods[0].fragment,"verification-default");
-        assertEq(defaultState.verificationMethods[0].keyData, abi.encodePacked(user));
+        
+        // Verify the key on the default verification method matches the address in the did
+        assertEq(address(bytes20(defaultState.verificationMethods[0].keyData)), user);
     }
 
     function test_should_initialize_did_state() public {
         address user = vm.addr(3);
-        string memory userAsString = "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf"; // foundry vm.addr(1) is deterministic
         string memory did = didRegistry.resolveDid(user);
 
         assertEq(didRegistry.isGenerativeDidState(did), true);

@@ -2,15 +2,11 @@
 
 pragma solidity ^0.8.20;
 
-import "forge-std/console.sol";
 import "./IDidRegistry.sol";
 import "solidity-stringutils/strings.sol";
 
 contract DIDRegistry is IDidRegistry {
     using strings for *;
-
-    bytes16 private constant _HEX_DIGITS = "0123456789abcdef";
-    uint8 private constant _ADDRESS_LENGTH = 20;
 
     enum VerificationMethodType { 
         EcdsaSecp256k1RecoveryMethod // Verification Method for For 20-bytes Ethereum Keys
@@ -31,7 +27,7 @@ contract DIDRegistry is IDidRegistry {
         string fragment;
         uint16 flags; // The permissions this key has where each bit corresponds to a configuration flag
         VerificationMethodType methodType;
-        bytes keyData; // Key data to match the given verification type
+        bytes keyData; // Key data to match the given verification type. Each verification method type has differentlly formatted keyData
     }
 
     struct Service {
@@ -50,6 +46,9 @@ contract DIDRegistry is IDidRegistry {
     mapping(string => DidState) private didStates; // Mapping from didId to the state
 
     uint16 private DEFAULT_VERIFICATION_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED);
+    
+    bytes16 private constant _HEX_DIGITS = "0123456789abcdef";
+    uint8 private constant _ADDRESS_LENGTH = 20;
     
     //////// Fetching/Resolving Did /////////////
     function resolveDid(address authorityKey) public pure returns(string memory) {
