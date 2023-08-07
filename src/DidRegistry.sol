@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.20;
 
+import "forge-std/console.sol";
 import "./IDidRegistry.sol";
 import "solidity-stringutils/strings.sol";
 
@@ -44,42 +45,52 @@ contract DIDRegistry is IDidRegistry {
         Service[] services;
         address[] nativeControllers;
         string[] externalControllers;
+        address owner;
     }
 
-    mapping(address => DidState) private didStates;
+    mapping(string => DidState) private didStates; // Mapping from didId to the state
 
+    uint16 private DEFAULT_VERIFICATION_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED);
+    
     //////// Fetching/Resolving Did /////////////
     function resolveDid(address authorityKey) public pure returns(string memory) {
         return string(abi.encodePacked("did:bnb:", toHexString(authorityKey)));
     }
 
     function resolveDidState(string calldata didId) external view returns(DidState memory) {
-        address authorityKey = _getAddressFromDid(didId);
-
-        if(_isGenerativeDidState(authorityKey)) {
+        if(_isGenerativeDidState(didId)) {
             return _getDefaultDidState(didId);
         }
 
-        return didStates[_getAddressFromDid(didId)];
+        return didStates[didId];
     }
 
-    function _isGenerativeDidState(address authorityKey) internal view returns(bool) {
-        DidState memory didState = didStates[authorityKey];
-        return didState.nativeControllers.length != 0;
+    function initializeDidState(address authorityKey) external returns(string memory didId) {
+        require(!_isGenerativeDidState(resolveDid(authorityKey)), "Did state already exist");
+
+        didId = resolveDid(authorityKey);
+
+        DidState memory loadedState = _getDefaultDidState(didId);
+        DidState storage didState = didStates[didId];
+
+        return didId;
     }
 
-    function _getDefaultVerificationMethod(address authorityKey) internal pure returns(VerificationMethod memory verificationMethod) {
+    function _isGenerativeDidState(string memory didId) internal view returns(bool) {
+        DidState memory didState = didStates[didId];
+        return didState.nativeControllers.length == 0;
+    }
+
+    function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
-            fragment: 'default',
-            flags: 
-                uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | 
-                uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED),
+            fragment: 'verification-default',
+            flags: DEFAULT_VERIFICATION_FLAGS,
             methodType: VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
-            keyData: _toBytes(authorityKey)
+            keyData: abi.encodePacked(authorityKey)
         });
     }
 
-    function _getDefaultDidState(string memory didId) internal pure returns(DidState memory) {
+    function _getDefaultDidState(string memory didId) internal view returns(DidState memory) {
         address authorityKey = _getAddressFromDid(didId);
 
         DidState memory defaultDidState;
@@ -87,12 +98,12 @@ contract DIDRegistry is IDidRegistry {
         defaultDidState.verificationMethods = new VerificationMethod[](1);
         defaultDidState.verificationMethods[0] = _getDefaultVerificationMethod(authorityKey);
 
-        defaultDidState.nativeControllers[0] = authorityKey;
+        defaultDidState.owner = authorityKey;
 
         return defaultDidState;
     }
 
-    function _getAddressFromDid(string memory didId) public pure returns (address) {
+    function _getAddressFromDid(string memory didId) internal pure returns (address) {
         // TODO make more generic to resolve address from different identifiers (ex did:bnb and did:dnd:testnet)
         string memory resolvedAddressAsString = didId.toSlice().beyond("did:bnb:".toSlice()).toString();
         bytes memory tmp = bytes(resolvedAddressAsString);
@@ -120,11 +131,6 @@ contract DIDRegistry is IDidRegistry {
             iaddr += (b1 * 16 + b2);
         }
         return address(iaddr);
-    }
-
-
-    function _toBytes(address a) internal pure returns (bytes memory) {
-        return abi.encodePacked(a);
     }
 
     // Taken from openzeppelins implementation: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Strings.sol
