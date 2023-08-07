@@ -39,13 +39,10 @@ contract DIDRegistry is IDidRegistry {
         VerificationMethod[] verificationMethods;
         Service[] services;
         address[] nativeControllers;
-        string[] assertionMethod;
-        string[] authentication;
-        string[] capabilityInvocation;
-        string[] capabilityDelegation;
     }
 
     mapping(string => DidDocument) private didDocuments;
+
 
     //////// Fetching/Resolving Did /////////////
     function resolveDid(address authorityKey) public pure returns(string memory) {
@@ -83,12 +80,14 @@ contract DIDRegistry is IDidRegistry {
     }
 
     function addVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) public returns(bool) {
-        // - Verify message sender has permission to update
+        // - Verify message sender is an authority key
+        // - Verify that the new verification method does not set ownership or protected flags
+        // - Verify that the new verification method is unique
         // - Add verification method to did
 
         /**
             Questions: 
-            - Should duplicates be allowed?
+            - Should it possible to add multiple verification methods in a single transaction?
             - Are the authentication keys the only eligible actors that can invoke an update?
          */
     }
@@ -96,13 +95,18 @@ contract DIDRegistry is IDidRegistry {
     function removeVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) public returns(bool) {
         // - Verify message sender has permission to remove verification method
         // - Verify that there will still be at least 1 verification method after removal
-        // - If method is a recovery key verify that msg.sender has the authority to remove it
+        // - If method is protected it cannot be removed
         // - Delete verification method from did
 
         /**
             Questions: 
             - Are the authentication keys the only eligible actors that can invoke a removal?
          */
+    }
+
+    function updateVerificationMethodFlags(string calldata didId, string calldata fragment, uint16 flags) public returns(bool) {
+        // - Verify message sender has permission to update
+        //   - If vm is protected ensure only the owner key can modify flags
     }
 
     function addService(string calldata didId, Service calldata service) public returns(bool) {
