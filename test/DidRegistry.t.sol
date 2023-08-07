@@ -38,4 +38,16 @@ contract CounterTest is Test {
         assertEq(defaultState.verificationMethods[0].fragment,"verification-default");
         assertEq(defaultState.verificationMethods[0].keyData, abi.encodePacked(user));
     }
+
+    function test_should_initialize_did_state() public {
+        address user = vm.addr(3);
+        string memory userAsString = "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf"; // foundry vm.addr(1) is deterministic
+        string memory did = didRegistry.resolveDid(user);
+
+        assertEq(didRegistry.isGenerativeDidState(did), true);
+
+        didRegistry.initializeDidState(did);
+
+        assertEq(didRegistry.isGenerativeDidState(did), false);
+    }
 }

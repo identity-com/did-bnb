@@ -58,27 +58,25 @@ contract DIDRegistry is IDidRegistry {
     }
 
     function resolveDidState(string calldata didId) external view returns(DidState memory) {
-        if(_isGenerativeDidState(didId)) {
+        if(isGenerativeDidState(didId)) {
             return _getDefaultDidState(didId);
         }
 
         return didStates[didId];
     }
 
-    function initializeDidState(address authorityKey) external returns(string memory didId) {
-        require(!_isGenerativeDidState(resolveDid(authorityKey)), "Did state already exist");
+    function initializeDidState(string calldata didId) external {
+        require(isGenerativeDidState(didId), "Did state already exist");
 
-        didId = resolveDid(authorityKey);
+        DidState memory defaultDidState = _getDefaultDidState(didId);
 
-        DidState memory loadedState = _getDefaultDidState(didId);
-        DidState storage didState = didStates[didId];
-
-        return didId;
+        didStates[didId].owner = defaultDidState.owner;
+        didStates[didId].verificationMethods.push(defaultDidState.verificationMethods[0]);
     }
 
-    function _isGenerativeDidState(string memory didId) internal view returns(bool) {
+    function isGenerativeDidState(string memory didId) public view returns(bool) {
         DidState memory didState = didStates[didId];
-        return didState.nativeControllers.length == 0;
+        return didState.owner == address(0);
     }
 
     function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
