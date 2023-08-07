@@ -28,7 +28,6 @@ contract CounterTest is Test {
         string memory did = didRegistry.resolveDid(user);
 
         DIDRegistry.DidState memory defaultState = didRegistry.resolveDidState(did);
-        assertEq(defaultState.owner, user);
 
         //Default the didState should be protected and have an ownership proof
         assertEq(

@@ -45,7 +45,6 @@ contract DIDRegistry is IDidRegistry {
         Service[] services;
         address[] nativeControllers;
         string[] externalControllers;
-        address owner;
     }
 
     mapping(string => DidState) private didStates; // Mapping from didId to the state
@@ -70,13 +69,12 @@ contract DIDRegistry is IDidRegistry {
 
         DidState memory defaultDidState = _getDefaultDidState(didId);
 
-        didStates[didId].owner = defaultDidState.owner;
         didStates[didId].verificationMethods.push(defaultDidState.verificationMethods[0]);
     }
 
     function isGenerativeDidState(string memory didId) public view returns(bool) {
         DidState memory didState = didStates[didId];
-        return didState.owner == address(0);
+        return didState.verificationMethods.length == 0;
     }
 
     function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
@@ -95,8 +93,6 @@ contract DIDRegistry is IDidRegistry {
 
         defaultDidState.verificationMethods = new VerificationMethod[](1);
         defaultDidState.verificationMethods[0] = _getDefaultVerificationMethod(authorityKey);
-
-        defaultDidState.owner = authorityKey;
 
         return defaultDidState;
     }
