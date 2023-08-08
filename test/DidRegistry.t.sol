@@ -50,4 +50,14 @@ contract CounterTest is Test {
 
         assertEq(didRegistry.isGenerativeDidState(did), false);
     }
+
+    function testFail_should_fail_to_initialize_did_that_exist() public {
+        address user = vm.addr(3);
+        string memory did = didRegistry.resolveDid(user);
+
+        // Initialize
+        didRegistry.initializeDidState(did);
+        // Try to initialize an existing didState
+        didRegistry.initializeDidState(did);
+    }
 }
