@@ -49,13 +49,19 @@ contract DIDRegistry is IDidRegistry {
     
     bytes16 private constant _HEX_DIGITS = "0123456789abcdef";
     uint8 private constant _ADDRESS_LENGTH = 20;
+
+    modifier onlyDIDOwner(string calldata didId) {
+        address resolvedAddress = _getAddressFromDid(didId);
+        require(msg.sender == resolvedAddress, "Message sender is the owner of this did");
+        _;
+    }
     
     //////// Fetching/Resolving Did /////////////
     function resolveDid(address authorityKey) public pure returns(string memory) {
-        return string(abi.encodePacked("did:bnb:", toHexString(authorityKey)));
+        return string(abi.encodePacked("did:bnb:", _toHexString(authorityKey)));
     }
 
-    function resolveDidState(string calldata didId) external view returns(DidState memory) {
+    function resolveDidState(string calldata didId) public view returns(DidState memory) {
         if(isGenerativeDidState(didId)) {
             return _getDefaultDidState(didId);
         }
@@ -76,6 +82,62 @@ contract DIDRegistry is IDidRegistry {
         return didState.verificationMethods.length == 0;
     }
 
+    /////////// didState Update public methods ////////
+    function addVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) onlyDIDOwner(didId) public returns(bool) {
+
+        require(!_doesVerificationMethodFragmentExist(didId, verificationMethod.fragment), "Verification method fragment already exist");
+        
+        // Apply a bitmask on the verificationMethodFlags
+        bool hasOwnershipFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF)) != 0;
+        bool hasProtectedFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED)) != 0;
+
+        bool isValidVerificationMethod = !hasOwnershipFlag && !hasProtectedFlag;
+
+        require(isValidVerificationMethod, "Cannot add verification method with ownership_proof or protected flags");
+        
+        didStates[didId].verificationMethods.push(verificationMethod);
+    }
+
+    function removeVerificationMethod(string calldata didId, string calldata fragment) onlyDIDOwner(didId) public returns(bool) {
+        DidState storage didState = didStates[didId];
+
+        require(didState.verificationMethods.length > 1, "Did must always have at least 1 verification method");
+        require(_doesVerificationMethodFragmentExist(didId, fragment), "Fragment does not match any verification methods with this did");
+
+        // Load verification method and validate it does not have a protected flag before removing
+        for(uint i=0; i < didState.verificationMethods.length; i++) {
+
+            VerificationMethod storage vm = didState.verificationMethods[i];
+
+            if(stringCompare(vm.fragment, fragment)) {
+                bool hasProtectedFlag = vm.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED)) != 0;
+                require(!hasProtectedFlag, "Cannot remove verification method because of protected flag");
+
+                // Remove verification method from array (not built into solidity so manipulating array to remove)
+                didState.verificationMethods[i] = didState.verificationMethods[didState.verificationMethods.length - 1];
+                didState.verificationMethods.pop();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function updateVerificationMethodFlags(string calldata didId, string calldata fragment, uint16 flags) onlyDIDOwner(didId) public returns(bool) {
+        require(_doesVerificationMethodFragmentExist(didId, fragment), "Fragment does not match any verification methods with this did");
+
+        DidState storage didState = didStates[didId];
+        // Load verification method and validate it does not have a protected flag before updating flags.
+        for(uint i=0; i < didState.verificationMethods.length; i++) {
+
+            VerificationMethod storage vm = didState.verificationMethods[i];
+
+            if(stringCompare(vm.fragment, fragment)) {
+                // Remove verification method from array (not built into solidity so manipulating array to remove)
+                didState.verificationMethods[i].flags = flags;
+            }
+        }
+    }
+
     function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
             fragment: 'verification-default',
@@ -94,6 +156,16 @@ contract DIDRegistry is IDidRegistry {
         defaultDidState.verificationMethods[0] = _getDefaultVerificationMethod(authorityKey);
 
         return defaultDidState;
+    }
+
+    function _doesVerificationMethodFragmentExist(string calldata didId, string calldata fragment) internal view returns(bool) {
+        DidState memory didState = resolveDidState(didId);
+        for(uint i=0; i < didState.verificationMethods.length; i++) {
+            if(stringCompare(didState.verificationMethods[i].fragment,fragment)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function _getAddressFromDid(string memory didId) internal pure returns (address) {
@@ -126,8 +198,15 @@ contract DIDRegistry is IDidRegistry {
         return address(iaddr);
     }
 
+    function stringCompare(string memory str1, string memory str2) public pure returns (bool) {
+        if (bytes(str1).length != bytes(str2).length) {
+            return false;
+        }
+        return keccak256(abi.encodePacked(str1)) == keccak256(abi.encodePacked(str2));
+    }
+
     // Taken from openzeppelins implementation: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Strings.sol
-     function toHexString(address addr) internal pure returns (string memory) {
+     function _toHexString(address addr) internal pure returns (string memory) {
         uint256 localValue = uint256(uint160(addr));
         bytes memory buffer = new bytes(2 * _ADDRESS_LENGTH + 2);
         buffer[0] = "0";
