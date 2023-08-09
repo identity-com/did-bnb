@@ -55,6 +55,11 @@ contract DIDRegistry is IDidRegistry {
         require(msg.sender == resolvedAddress, "Message sender is not the owner of this did");
         _;
     }
+
+    modifier onlyNonGenerativeDid(string calldata didId) {
+        require(!isGenerativeDidState(didId), "Only non-generative didStates are allowed for this call");
+        _;
+    }
     
     //////// Fetching/Resolving Did /////////////
     function resolveDid(address authorityKey) public pure returns(string memory) {
@@ -83,7 +88,7 @@ contract DIDRegistry is IDidRegistry {
     }
 
     /////////// didState Update public methods ////////
-    function addVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) onlyDIDOwner(didId) public returns(bool) {
+    function addVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
 
         require(!_doesVerificationMethodFragmentExist(didId, verificationMethod.fragment), "Verification method fragment already exist");
         
@@ -101,7 +106,7 @@ contract DIDRegistry is IDidRegistry {
         return true;
     }
 
-    function removeVerificationMethod(string calldata didId, string calldata fragment) onlyDIDOwner(didId) public returns(bool) {
+    function removeVerificationMethod(string calldata didId, string calldata fragment) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
         DidState storage didState = didStates[didId];
 
         require(didState.verificationMethods.length > 1, "Did must always have at least 1 verification method");
@@ -127,7 +132,7 @@ contract DIDRegistry is IDidRegistry {
         return false;
     }
 
-    function updateVerificationMethodFlags(string calldata didId, string calldata fragment, uint16 flags) onlyDIDOwner(didId) public returns(bool) {
+    function updateVerificationMethodFlags(string calldata didId, string calldata fragment, uint16 flags) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
         require(_doesVerificationMethodFragmentExist(didId, fragment), "Fragment does not match any verification methods with this did");
 
         DidState storage didState = didStates[didId];
@@ -141,6 +146,32 @@ contract DIDRegistry is IDidRegistry {
                 didState.verificationMethods[i].flags = flags;
 
                 emit VerificationMethodFlagsUpdated(didId, fragment, oldFlags, flags);
+                return true;
+            }
+        }
+    }
+
+    function addService(string calldata didId, Service calldata service) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
+        require(!_doesServiceFragmentExist(didId, service.fragment), "Fragment already exist on another service");
+
+        didStates[didId].services.push(service);
+
+        emit ServiceAdded(didId, service.fragment);
+        return true;
+    }
+
+    function removeService(string calldata didId, Service calldata service) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
+        require(_doesServiceFragmentExist(didId, service.fragment), "Fragment not found on service");
+
+        DidState storage didState = didStates[didId];
+
+        for(uint i=0; i < didState.services.length; i++) {
+            if(stringCompare(didState.services[i].fragment, service.fragment)) {
+                // Remove service from array (not built into solidity so manipulating array to remove)
+                didState.services[i] = didState.services[didState.services.length - 1];
+                didState.services.pop();
+
+                emit ServiceRemoved(didId, service.fragment);
                 return true;
             }
         }
@@ -171,6 +202,16 @@ contract DIDRegistry is IDidRegistry {
         DidState memory didState = resolveDidState(didId);
         for(uint i=0; i < didState.verificationMethods.length; i++) {
             if(stringCompare(didState.verificationMethods[i].fragment,fragment)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function _doesServiceFragmentExist(string calldata didId, string calldata fragment) internal view returns(bool) {
+        DidState memory didState = resolveDidState(didId);
+        for(uint i=0; i < didState.services.length; i++) {
+            if(stringCompare(didState.services[i].fragment,fragment)) {
                 return true;
             }
         }

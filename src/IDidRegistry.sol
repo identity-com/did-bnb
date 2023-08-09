@@ -9,8 +9,8 @@ interface IDidRegistry {
     event VerificationMethodRemoved(string indexed didId, string indexed fragment);
     event VerificationMethodFlagsUpdated(string indexed didId, string indexed fragment, uint16 oldFlags, uint16 newFlags);
 
-    event ServiceAdded();
-    event ServiceRemoved();
+    event ServiceAdded(string indexed didId, string indexed fragment);
+    event ServiceRemoved(string indexed didId, string indexed fragment);
 
     event ControllerAdded();
     event ControllerRemoved();
