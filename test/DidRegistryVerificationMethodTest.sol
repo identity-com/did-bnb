@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 import {DIDRegistry} from "../src/DidRegistry.sol";
 import { DidRegistryTest } from "./DidRegistryTest.sol";
 
-contract DidRegistryVerificationTest is DidRegistryTest {
+contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
     function test_should_create_new_verification_method() public {
         address user = vm.addr(1);
