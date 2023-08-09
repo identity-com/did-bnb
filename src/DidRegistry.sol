@@ -52,7 +52,7 @@ contract DIDRegistry is IDidRegistry {
 
     modifier onlyDIDOwner(string calldata didId) {
         address resolvedAddress = _getAddressFromDid(didId);
-        require(msg.sender == resolvedAddress, "Message sender is the owner of this did");
+        require(msg.sender == resolvedAddress, "Message sender is not the owner of this did");
         _;
     }
     
@@ -91,11 +91,12 @@ contract DIDRegistry is IDidRegistry {
         bool hasOwnershipFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF)) != 0;
         bool hasProtectedFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED)) != 0;
 
-        bool isValidVerificationMethod = !hasOwnershipFlag && !hasProtectedFlag;
+        bool isValidVerificationMethod = !(hasOwnershipFlag && hasProtectedFlag);
 
         require(isValidVerificationMethod, "Cannot add verification method with ownership_proof or protected flags");
         
         didStates[didId].verificationMethods.push(verificationMethod);
+        return true;
     }
 
     function removeVerificationMethod(string calldata didId, string calldata fragment) onlyDIDOwner(didId) public returns(bool) {
@@ -134,10 +135,12 @@ contract DIDRegistry is IDidRegistry {
             if(stringCompare(vm.fragment, fragment)) {
                 // Remove verification method from array (not built into solidity so manipulating array to remove)
                 didState.verificationMethods[i].flags = flags;
+                return true;
             }
         }
     }
 
+    
 
     function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
