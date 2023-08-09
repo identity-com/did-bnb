@@ -5,9 +5,9 @@ interface IDidRegistry {
     /**
         - Events from Update and Delete operations will live here
      */
-    event VerificationMethodAdded();
-    event VerificationMethodRemoved();
-    event VerificationMethodUpdated();
+    event VerificationMethodAdded(string indexed didId, string indexed fragment);
+    event VerificationMethodRemoved(string indexed didId, string indexed fragment);
+    event VerificationMethodFlagsUpdated(string indexed didId, string indexed fragment, uint16 oldFlags, uint16 newFlags);
 
     event ServiceAdded();
     event ServiceRemoved();
@@ -16,9 +16,3 @@ interface IDidRegistry {
     event ControllerRemoved();
 
 }
-
-/**
-1) Write out events (just names)
-2) Write out methods (just shell)
-3) Write out test (just names)
- */

@@ -96,6 +96,8 @@ contract DIDRegistry is IDidRegistry {
         require(isValidVerificationMethod, "Cannot add verification method with ownership_proof or protected flags");
         
         didStates[didId].verificationMethods.push(verificationMethod);
+        
+        emit VerificationMethodAdded(didId, verificationMethod.fragment);
         return true;
     }
 
@@ -117,6 +119,8 @@ contract DIDRegistry is IDidRegistry {
                 // Remove verification method from array (not built into solidity so manipulating array to remove)
                 didState.verificationMethods[i] = didState.verificationMethods[didState.verificationMethods.length - 1];
                 didState.verificationMethods.pop();
+
+                emit VerificationMethodRemoved(didId, vm.fragment);
                 return true;
             }
         }
@@ -133,14 +137,15 @@ contract DIDRegistry is IDidRegistry {
             VerificationMethod storage vm = didState.verificationMethods[i];
 
             if(stringCompare(vm.fragment, fragment)) {
-                // Remove verification method from array (not built into solidity so manipulating array to remove)
+                uint16 oldFlags = didState.verificationMethods[i].flags;              
                 didState.verificationMethods[i].flags = flags;
+
+                emit VerificationMethodFlagsUpdated(didId, fragment, oldFlags, flags);
                 return true;
             }
         }
     }
 
-    
 
     function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
