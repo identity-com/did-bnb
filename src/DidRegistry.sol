@@ -31,7 +31,7 @@ contract DIDRegistry is IDidRegistry {
     }
 
     struct Service {
-        string fragment; //TODO: Are fragments globally unique? Ie can a service and a verification method have the same fragment?
+        string fragment;
         string service_type;
         string service_endpoint;
     }
@@ -137,6 +137,7 @@ contract DIDRegistry is IDidRegistry {
             }
         }
     }
+
 
     function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
