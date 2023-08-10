@@ -50,9 +50,9 @@ contract DIDRegistry is IDidRegistry {
     bytes16 private constant _HEX_DIGITS = "0123456789abcdef";
     uint8 private constant _ADDRESS_LENGTH = 20;
 
-    modifier onlyDIDOwner(string calldata didId) {
-        address resolvedAddress = _getAddressFromDid(didId);
-        require(msg.sender == resolvedAddress, "Message sender is not the owner of this did");
+    modifier onlyAuthorizedKeys(string calldata didId) {
+        address authorityKey = _getAddressFromDid(didId);
+        require(msg.sender == authorityKey || _isKeyAuthority(didId, msg.sender), "Message sender is not the owner of this did");
         _;
     }
 
@@ -88,7 +88,7 @@ contract DIDRegistry is IDidRegistry {
     }
 
     /////////// didState Update public methods ////////
-    function addVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
+    function addVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
 
         require(!_doesVerificationMethodFragmentExist(didId, verificationMethod.fragment), "Verification method fragment already exist");
         
@@ -106,7 +106,7 @@ contract DIDRegistry is IDidRegistry {
         return true;
     }
 
-    function removeVerificationMethod(string calldata didId, string calldata fragment) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
+    function removeVerificationMethod(string calldata didId, string calldata fragment) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
         DidState storage didState = didStates[didId];
 
         require(didState.verificationMethods.length > 1, "Did must always have at least 1 verification method");
@@ -132,7 +132,7 @@ contract DIDRegistry is IDidRegistry {
         return false;
     }
 
-    function updateVerificationMethodFlags(string calldata didId, string calldata fragment, uint16 flags) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
+    function updateVerificationMethodFlags(string calldata didId, string calldata fragment, uint16 flags) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
         require(_doesVerificationMethodFragmentExist(didId, fragment), "Fragment does not match any verification methods with this did");
 
         DidState storage didState = didStates[didId];
@@ -151,7 +151,7 @@ contract DIDRegistry is IDidRegistry {
         }
     }
 
-    function addService(string calldata didId, Service calldata service) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
+    function addService(string calldata didId, Service calldata service) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
         require(!_doesServiceFragmentExist(didId, service.fragment), "Fragment already exist on another service");
 
         didStates[didId].services.push(service);
@@ -160,7 +160,7 @@ contract DIDRegistry is IDidRegistry {
         return true;
     }
 
-    function removeService(string calldata didId, string calldata fragment) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
+    function removeService(string calldata didId, string calldata fragment) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
         require(_doesServiceFragmentExist(didId, fragment), "Fragment not found");
 
         DidState storage didState = didStates[didId];
@@ -175,6 +175,19 @@ contract DIDRegistry is IDidRegistry {
                 return true;
             }
         }
+    }
+
+    function _isKeyAuthority(string calldata didId, address authority) internal view returns(bool) {
+        DidState memory didState = resolveDidState(didId);
+
+        for(uint i=0; i < didState.verificationMethods.length; i++) {
+            // Iterate through verification methods looking for key
+            if(address(bytes20(didState.verificationMethods[i].keyData)) == authority) {
+                // Does the key authority have permission to invoke
+                return uint16(1) << uint16(VerificationMethodFlagBitMask.CAPABILITY_INVOCATION) != 0;
+            }
+        }
+        return false;
     }
 
     function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {

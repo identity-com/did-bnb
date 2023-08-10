@@ -82,7 +82,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         assertEq(finalState.verificationMethods[1].flags,newFlags);
     }
 
-    function testFail_only_did_owner_can_add_verification_methods() public {
+    function testFail_only_did_authorized_keys_can_add_verification_methods() public {
         address user = vm.addr(1);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
@@ -98,7 +98,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         _attemptToAddVerificationMethod(user, newVm);
     }
 
-    function testFail_only_did_owner_can_remove_verification_methods() public {
+    function testFail_only_did_authorized_keys_can_remove_verification_methods() public {
         address user = vm.addr(1);
         string memory didId = didRegistry.resolveDid(user);
 
@@ -196,7 +196,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         _attemptToAddVerificationMethod(user, newVm);
     }
 
-    function testFail_only_owner_should_be_able_to_update_verification_method_flags() public {
+    function testFail_only_authorized_keys_should_be_able_to_update_verification_method_flags() public {
         address user = vm.addr(1);
         string memory didId = didRegistry.resolveDid(user);
 
