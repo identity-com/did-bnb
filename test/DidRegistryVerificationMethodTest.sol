@@ -7,7 +7,6 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
     function test_should_create_new_verification_method() public {
         address user = vm.addr(1);
-        string memory didId = didRegistry.resolveDid(user);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
@@ -22,7 +21,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         vm.stopPrank(); 
 
-        DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(didId);
+        DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(user);
 
         // Verify length of vm's
         assertEq(finalState.verificationMethods.length,2);
@@ -38,7 +37,6 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
     function test_should_remove_verification_method() public {
         address user = vm.addr(1);
-        string memory didId = didRegistry.resolveDid(user);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
@@ -51,16 +49,15 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         _attemptToAddVerificationMethod(user, newVm);
 
-        didRegistry.removeVerificationMethod(didId, newVm.fragment);
+        didRegistry.removeVerificationMethod(user, newVm.fragment);
 
-        DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(didId);
+        DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(user);
 
         assertEq(finalState.verificationMethods.length,1);
     }
 
     function test_should_update_verification_method_flags() public {
         address user = vm.addr(1);
-        string memory didId = didRegistry.resolveDid(user);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
@@ -75,8 +72,8 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         uint16 newFlags = uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE));
 
-        bool result = didRegistry.updateVerificationMethodFlags(didId, newVm.fragment, newFlags);
-        DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(didId);
+        bool result = didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);
+        DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(user);
 
         assertEq(result, true);
         assertEq(finalState.verificationMethods[1].flags,newFlags);
@@ -100,7 +97,6 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
     function testFail_only_did_authorized_keys_can_remove_verification_methods() public {
         address user = vm.addr(1);
-        string memory didId = didRegistry.resolveDid(user);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
@@ -118,12 +114,11 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         address nonAuthorizedUser = vm.addr(2);
         vm.startPrank(nonAuthorizedUser); // Send transaction as the nonAuthorizedUser
 
-        didRegistry.removeVerificationMethod(didId, newVm.fragment);
+        didRegistry.removeVerificationMethod(user, newVm.fragment);
     }
 
     function testFail_should_not_be_able_to_remove_verification_method_that_does_not_exist() public {
         address user = vm.addr(1);
-        string memory didId = didRegistry.resolveDid(user);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
@@ -136,12 +131,11 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
        vm.startPrank(user); // Send transaction as the user
 
-        didRegistry.removeVerificationMethod(didId, newVm.fragment);
+        didRegistry.removeVerificationMethod(user, newVm.fragment);
     }
 
     function testFail_should_not_be_able_to_remove_verification_method_with_protected_flag() public {
         address user = vm.addr(1);
-        string memory didId = didRegistry.resolveDid(user);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
@@ -154,16 +148,15 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         _attemptToAddVerificationMethod(user, newVm);
 
-        didRegistry.removeVerificationMethod(didId, newVm.fragment);
+        didRegistry.removeVerificationMethod(user, newVm.fragment);
     }
 
     function testFail_should_not_be_able_to_remove_verification_method_if_there_is_only_one() public {
         address user = vm.addr(1);
-        string memory didId = didRegistry.resolveDid(user);
 
         vm.startPrank(user); // Send transaction as the user
 
-        didRegistry.removeVerificationMethod(didId, 'verification-default');
+        didRegistry.removeVerificationMethod(user, 'verification-default');
     }
 
     function testFail_should_not_be_able_to_create_duplicate_verification_methods() public {
@@ -198,8 +191,6 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
     function testFail_only_authorized_keys_should_be_able_to_update_verification_method_flags() public {
         address user = vm.addr(1);
-        string memory didId = didRegistry.resolveDid(user);
-
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
             flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
@@ -218,7 +209,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         uint16 newFlags = uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE));
 
-        bool result = didRegistry.updateVerificationMethodFlags(didId, newVm.fragment, newFlags);
+        bool result = didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);
     }
 
 }

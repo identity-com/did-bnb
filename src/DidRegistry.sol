@@ -3,10 +3,8 @@
 pragma solidity ^0.8.19;
 
 import "./IDidRegistry.sol";
-import "solidity-stringutils/strings.sol";
 
 contract DIDRegistry is IDidRegistry {
-    using strings for *;
 
     enum VerificationMethodType { 
         EcdsaSecp256k1RecoveryMethod // Verification Method for For 20-bytes Ethereum Keys
@@ -43,54 +41,47 @@ contract DIDRegistry is IDidRegistry {
         string[] externalControllers;
     }
 
-    mapping(string => DidState) private didStates; // Mapping from didId to the state
+    mapping(address => DidState) private didStates; // Mapping from didIdentifier to the state
 
     uint16 private DEFAULT_VERIFICATION_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED);
     
-    bytes16 private constant _HEX_DIGITS = "0123456789abcdef";
-    uint8 private constant _ADDRESS_LENGTH = 20;
 
-    modifier onlyAuthorizedKeys(string calldata didId) {
-        address authorityKey = _getAddressFromDid(didId);
-        require(msg.sender == authorityKey || _isKeyAuthority(didId, msg.sender), "Message sender is not the owner of this did");
+    modifier onlyAuthorizedKeys(address didIdentifier) {
+        require(msg.sender == didIdentifier || _isKeyAuthority(didIdentifier, msg.sender), "Message sender is not the owner of this did");
         _;
     }
 
-    modifier onlyNonGenerativeDid(string calldata didId) {
-        require(!isGenerativeDidState(didId), "Only non-generative didStates are allowed for this call");
+    modifier onlyNonGenerativeDid(address didIdentifier) {
+        require(!isGenerativeDidState(didIdentifier), "Only non-generative didStates are allowed for this call");
         _;
     }
     
     //////// Fetching/Resolving Did /////////////
-    function resolveDid(address authorityKey) public pure returns(string memory) {
-        return string(abi.encodePacked("did:bnb:", _toHexString(authorityKey)));
-    }
-
-    function resolveDidState(string calldata didId) public view returns(DidState memory) {
-        if(isGenerativeDidState(didId)) {
-            return _getDefaultDidState(didId);
+    function resolveDidState(address didIdentifier) external view returns(DidState memory) {
+        if(isGenerativeDidState(didIdentifier)) {
+            return _getDefaultDidState(didIdentifier);
         }
 
-        return didStates[didId];
+        return didStates[didIdentifier];
     }
 
-    function initializeDidState(string calldata didId) external {
-        require(isGenerativeDidState(didId), "Did state already exist");
+    function initializeDidState(address didIdentifier) external {
+        require(isGenerativeDidState(didIdentifier), "Did state already exist");
 
-        DidState memory defaultDidState = _getDefaultDidState(didId);
+        DidState memory defaultDidState = _getDefaultDidState(didIdentifier);
 
-        didStates[didId].verificationMethods.push(defaultDidState.verificationMethods[0]);
+        didStates[didIdentifier].verificationMethods.push(defaultDidState.verificationMethods[0]);
     }
 
-    function isGenerativeDidState(string memory didId) public view returns(bool) {
-        DidState memory didState = didStates[didId];
+    function isGenerativeDidState(address didIdentifier) public view returns(bool) {
+        DidState memory didState = didStates[didIdentifier];
         return didState.verificationMethods.length == 0;
     }
 
     /////////// didState Update public methods ////////
-    function addVerificationMethod(string calldata didId, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
+    function addVerificationMethod(address didIdentifier, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
 
-        require(!_doesVerificationMethodFragmentExist(didId, verificationMethod.fragment), "Verification method fragment already exist");
+        require(!_doesVerificationMethodFragmentExist(didIdentifier, verificationMethod.fragment), "Verification method fragment already exist");
         
         // Apply a bitmask on the verificationMethodFlags
         bool hasOwnershipFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF)) != 0;
@@ -100,24 +91,24 @@ contract DIDRegistry is IDidRegistry {
 
         require(isValidVerificationMethod, "Cannot add verification method with ownership_proof or protected flags");
         
-        didStates[didId].verificationMethods.push(verificationMethod);
+        didStates[didIdentifier].verificationMethods.push(verificationMethod);
         
-        emit VerificationMethodAdded(didId, verificationMethod.fragment);
+        emit VerificationMethodAdded(didIdentifier, verificationMethod.fragment);
         return true;
     }
 
-    function removeVerificationMethod(string calldata didId, string calldata fragment) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
-        DidState storage didState = didStates[didId];
+    function removeVerificationMethod(address didIdentifier, string calldata fragment) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+        DidState storage didState = didStates[didIdentifier];
 
         require(didState.verificationMethods.length > 1, "Did must always have at least 1 verification method");
-        require(_doesVerificationMethodFragmentExist(didId, fragment), "Fragment does not match any verification methods with this did");
+        require(_doesVerificationMethodFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
 
         // Load verification method and validate it does not have a protected flag before removing
         for(uint i=0; i < didState.verificationMethods.length; i++) {
 
             VerificationMethod storage vm = didState.verificationMethods[i];
 
-            if(stringCompare(vm.fragment, fragment)) {
+            if(_stringCompare(vm.fragment, fragment)) {
                 bool hasProtectedFlag = vm.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED)) != 0;
                 require(!hasProtectedFlag, "Cannot remove verification method because of protected flag");
 
@@ -125,68 +116,68 @@ contract DIDRegistry is IDidRegistry {
                 didState.verificationMethods[i] = didState.verificationMethods[didState.verificationMethods.length - 1];
                 didState.verificationMethods.pop();
 
-                emit VerificationMethodRemoved(didId, vm.fragment);
+                emit VerificationMethodRemoved(didIdentifier, vm.fragment);
                 return true;
             }
         }
         return false;
     }
 
-    function updateVerificationMethodFlags(string calldata didId, string calldata fragment, uint16 flags) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
-        require(_doesVerificationMethodFragmentExist(didId, fragment), "Fragment does not match any verification methods with this did");
+    function updateVerificationMethodFlags(address didIdentifier, string calldata fragment, uint16 flags) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+        require(_doesVerificationMethodFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
 
-        DidState storage didState = didStates[didId];
+        DidState storage didState = didStates[didIdentifier];
         // Load verification method and validate it does not have a protected flag before updating flags.
         for(uint i=0; i < didState.verificationMethods.length; i++) {
 
             VerificationMethod storage vm = didState.verificationMethods[i];
 
-            if(stringCompare(vm.fragment, fragment)) {
+            if(_stringCompare(vm.fragment, fragment)) {
                 uint16 oldFlags = didState.verificationMethods[i].flags;              
                 didState.verificationMethods[i].flags = flags;
 
-                emit VerificationMethodFlagsUpdated(didId, fragment, oldFlags, flags);
+                emit VerificationMethodFlagsUpdated(didIdentifier, fragment, oldFlags, flags);
                 return true;
             }
         }
     }
 
-    function addService(string calldata didId, Service calldata service) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
-        require(!_doesServiceFragmentExist(didId, service.fragment), "Fragment already exist on another service");
+    function addService(address didIdentifier, Service calldata service) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+        require(!_doesServiceFragmentExist(didIdentifier, service.fragment), "Fragment already exist on another service");
 
-        didStates[didId].services.push(service);
+        didStates[didIdentifier].services.push(service);
 
-        emit ServiceAdded(didId, service.fragment);
+        emit ServiceAdded(didIdentifier, service.fragment);
         return true;
     }
 
-    function removeService(string calldata didId, string calldata fragment) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
-        require(_doesServiceFragmentExist(didId, fragment), "Fragment not found");
+    function removeService(address didIdentifier, string calldata fragment) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+        require(_doesServiceFragmentExist(didIdentifier, fragment), "Fragment not found");
 
-        DidState storage didState = didStates[didId];
+        DidState storage didState = didStates[didIdentifier];
 
         for(uint i=0; i < didState.services.length; i++) {
-            if(stringCompare(didState.services[i].fragment, fragment)) {
+            if(_stringCompare(didState.services[i].fragment, fragment)) {
                 // Remove service from array (not built into solidity so manipulating array to remove)
                 didState.services[i] = didState.services[didState.services.length - 1];
                 didState.services.pop();
 
-                emit ServiceRemoved(didId, fragment);
+                emit ServiceRemoved(didIdentifier, fragment);
                 return true;
             }
         }
     }
 
-    function addNativeController(string calldata didId, address controller) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
-        require(!_doesNativeControllerExist(didId,controller), "Native controller already exist");
-        didStates[didId].nativeControllers.push(controller);
+    function addNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+        require(!_doesNativeControllerExist(didIdentifier,controller), "Native controller already exist");
+        didStates[didIdentifier].nativeControllers.push(controller);
     }
 
-    function removeNativeController(string calldata didId, address controller) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
-        require(_getAddressFromDid(didId) != controller, "Cannot remove default authority key");
-        require(_doesNativeControllerExist(didId,controller), "Native controller does not exist");
+    function removeNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+        require(didIdentifier != controller, "Cannot remove default authority key");
+        require(_doesNativeControllerExist(didIdentifier,controller), "Native controller does not exist");
 
-        DidState storage didState = didStates[didId];
+        DidState storage didState = didStates[didIdentifier];
 
         for(uint i=0; i < didState.nativeControllers.length; i++) {
             if(didState.nativeControllers[i] == controller) {
@@ -198,8 +189,8 @@ contract DIDRegistry is IDidRegistry {
         }
     }
 
-    function _isKeyAuthority(string calldata didId, address authority) internal view returns(bool) {
-        DidState memory didState = resolveDidState(didId);
+    function _isKeyAuthority(address didIdentifier, address authority) internal view returns(bool) {
+        DidState storage didState = didStates[didIdentifier];
 
         for(uint i=0; i < didState.verificationMethods.length; i++) {
             // Iterate through verification methods looking for key
@@ -220,39 +211,38 @@ contract DIDRegistry is IDidRegistry {
         });
     }
 
-    function _getDefaultDidState(string memory didId) internal view returns(DidState memory) {
-        address authorityKey = _getAddressFromDid(didId);
+    function _getDefaultDidState(address didIdentifier) internal view returns(DidState memory) {
 
         DidState memory defaultDidState;
 
         defaultDidState.verificationMethods = new VerificationMethod[](1);
-        defaultDidState.verificationMethods[0] = _getDefaultVerificationMethod(authorityKey);
+        defaultDidState.verificationMethods[0] = _getDefaultVerificationMethod(didIdentifier);
 
         return defaultDidState;
     }
 
-    function _doesVerificationMethodFragmentExist(string calldata didId, string calldata fragment) internal view returns(bool) {
-        DidState memory didState = resolveDidState(didId);
+    function _doesVerificationMethodFragmentExist(address didIdentifier, string calldata fragment) internal view returns(bool) {
+        DidState storage didState = didStates[didIdentifier];
         for(uint i=0; i < didState.verificationMethods.length; i++) {
-            if(stringCompare(didState.verificationMethods[i].fragment,fragment)) {
+            if(_stringCompare(didState.verificationMethods[i].fragment, fragment)) {
                 return true;
             }
         }
         return false;
     }
 
-    function _doesServiceFragmentExist(string calldata didId, string calldata fragment) internal view returns(bool) {
-        DidState memory didState = resolveDidState(didId);
+    function _doesServiceFragmentExist(address didIdentifier, string calldata fragment) internal view returns(bool) {
+        DidState storage didState = didStates[didIdentifier];
         for(uint i=0; i < didState.services.length; i++) {
-            if(stringCompare(didState.services[i].fragment,fragment)) {
+            if(_stringCompare(didState.services[i].fragment, fragment)) {
                 return true;
             }
         }
         return false;
     }
 
-    function _doesNativeControllerExist(string calldata didId, address controller) internal view returns(bool) {
-        DidState memory didState = resolveDidState(didId);
+    function _doesNativeControllerExist(address didIdentifier, address controller) internal view returns(bool) {
+        DidState storage didState = didStates[didIdentifier];
         for(uint i=0; i < didState.nativeControllers.length; i++) {
             if(didState.nativeControllers[i] == controller) {
                 return true;
@@ -261,55 +251,10 @@ contract DIDRegistry is IDidRegistry {
         return false;
     }
 
-
-    function _getAddressFromDid(string memory didId) internal pure returns (address) {
-        // TODO make more generic to resolve address from different identifiers (ex did:bnb and did:dnd:testnet)
-        string memory resolvedAddressAsString = didId.toSlice().beyond("did:bnb:".toSlice()).toString();
-        bytes memory tmp = bytes(resolvedAddressAsString);
-        uint160 iaddr = 0;
-        uint160 b1;
-        uint160 b2;
-        for (uint i = 2; i < 2 + 2 * 20; i += 2) {
-            iaddr *= 256;
-            b1 = uint160(uint8(tmp[i]));
-            b2 = uint160(uint8(tmp[i + 1]));
-            if ((b1 >= 97) && (b1 <= 102)) {
-                b1 -= 87;
-            } else if ((b1 >= 65) && (b1 <= 70)) {
-                b1 -= 55;
-            } else if ((b1 >= 48) && (b1 <= 57)) {
-                b1 -= 48;
-            }
-            if ((b2 >= 97) && (b2 <= 102)) {
-                b2 -= 87;
-            } else if ((b2 >= 65) && (b2 <= 70)) {
-                b2 -= 55;
-            } else if ((b2 >= 48) && (b2 <= 57)) {
-                b2 -= 48;
-            }
-            iaddr += (b1 * 16 + b2);
-        }
-        return address(iaddr);
-    }
-
-    function stringCompare(string memory str1, string memory str2) public pure returns (bool) {
+    function _stringCompare(string memory str1, string memory str2) public pure returns (bool) {
         if (bytes(str1).length != bytes(str2).length) {
             return false;
         }
         return keccak256(abi.encodePacked(str1)) == keccak256(abi.encodePacked(str2));
     }
-
-    // Taken from openzeppelins implementation: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Strings.sol
-     function _toHexString(address addr) internal pure returns (string memory) {
-        uint256 localValue = uint256(uint160(addr));
-        bytes memory buffer = new bytes(2 * _ADDRESS_LENGTH + 2);
-        buffer[0] = "0";
-        buffer[1] = "x";
-        for (uint256 i = 2 * _ADDRESS_LENGTH + 1; i > 1; --i) {
-            buffer[i] = _HEX_DIGITS[localValue & 0xf];
-            localValue >>= 4;
-        }
-        return string(buffer);
-    }
-
 }

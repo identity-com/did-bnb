@@ -2,13 +2,9 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
 import {DIDRegistry} from "../src/DidRegistry.sol";
-import "solidity-stringutils/strings.sol";
 
 contract DidRegistryTest is Test {
-    using strings for *;
-
     DIDRegistry public didRegistry;
 
     function setUp() public {
@@ -16,9 +12,8 @@ contract DidRegistryTest is Test {
     }
 
     function _attemptToAddVerificationMethod(address user, DIDRegistry.VerificationMethod memory newVm) internal  {
-        string memory didId = didRegistry.resolveDid(user);
-        didRegistry.initializeDidState(didId);
-        didRegistry.addVerificationMethod(didId, newVm);
+        didRegistry.initializeDidState(user);
+        didRegistry.addVerificationMethod(user, newVm);
     }
 }
 

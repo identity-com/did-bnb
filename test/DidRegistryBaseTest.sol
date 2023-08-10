@@ -6,19 +6,10 @@ import { DidRegistryTest } from "./DidRegistryTest.sol";
 contract DidRegistryBaseTest is DidRegistryTest {
 
     //////// Test for did creation and resolution//////////
-    function test_should_resolve_did() public {
-        address user = vm.addr(1);
-        string memory userAsString = "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf"; // foundry vm.addr(1) is deterministic
-        string memory did = didRegistry.resolveDid(user);
-
-        assertEq(did, string(abi.encodePacked("did:bnb:", bytes(userAsString))));
-    }
-
     function test_fuzz_should_resolve_did_state(address user) public {
         vm.assume(user > address(0));
-        string memory did = didRegistry.resolveDid(user);
 
-        DIDRegistry.DidState memory defaultState = didRegistry.resolveDidState(did);
+        DIDRegistry.DidState memory defaultState = didRegistry.resolveDidState(user);
 
         //Default the didState should be protected and have an ownership proof and is protected
         assertEq(
@@ -33,22 +24,20 @@ contract DidRegistryBaseTest is DidRegistryTest {
 
     function test_should_initialize_did_state() public {
         address user = vm.addr(3);
-        string memory did = didRegistry.resolveDid(user);
 
-        assertEq(didRegistry.isGenerativeDidState(did), true);
+        assertEq(didRegistry.isGenerativeDidState(user), true);
 
-        didRegistry.initializeDidState(did);
+        didRegistry.initializeDidState(user);
 
-        assertEq(didRegistry.isGenerativeDidState(did), false);
+        assertEq(didRegistry.isGenerativeDidState(user), false);
     }
 
     function testFail_should_fail_to_initialize_didState_that_exist() public {
         address user = vm.addr(3);
-        string memory did = didRegistry.resolveDid(user);
 
         // Initialize
-        didRegistry.initializeDidState(did);
+        didRegistry.initializeDidState(user);
         // Try to initialize an existing didState
-        didRegistry.initializeDidState(did);
+        didRegistry.initializeDidState(user);
     }
 }
