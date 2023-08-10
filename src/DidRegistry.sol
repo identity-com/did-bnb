@@ -96,7 +96,7 @@ contract DIDRegistry is IDidRegistry {
         bool hasOwnershipFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF)) != 0;
         bool hasProtectedFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED)) != 0;
 
-        bool isValidVerificationMethod = !(hasOwnershipFlag && hasProtectedFlag);
+        bool isValidVerificationMethod = !hasOwnershipFlag && !hasProtectedFlag;
 
         require(isValidVerificationMethod, "Cannot add verification method with ownership_proof or protected flags");
         
@@ -160,23 +160,22 @@ contract DIDRegistry is IDidRegistry {
         return true;
     }
 
-    function removeService(string calldata didId, Service calldata service) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
-        require(_doesServiceFragmentExist(didId, service.fragment), "Fragment not found on service");
+    function removeService(string calldata didId, string calldata fragment) onlyNonGenerativeDid(didId) onlyDIDOwner(didId) public returns(bool) {
+        require(_doesServiceFragmentExist(didId, fragment), "Fragment not found");
 
         DidState storage didState = didStates[didId];
 
         for(uint i=0; i < didState.services.length; i++) {
-            if(stringCompare(didState.services[i].fragment, service.fragment)) {
+            if(stringCompare(didState.services[i].fragment, fragment)) {
                 // Remove service from array (not built into solidity so manipulating array to remove)
                 didState.services[i] = didState.services[didState.services.length - 1];
                 didState.services.pop();
 
-                emit ServiceRemoved(didId, service.fragment);
+                emit ServiceRemoved(didId, fragment);
                 return true;
             }
         }
     }
-
 
     function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
@@ -217,6 +216,7 @@ contract DIDRegistry is IDidRegistry {
         }
         return false;
     }
+
 
     function _getAddressFromDid(string memory didId) internal pure returns (address) {
         // TODO make more generic to resolve address from different identifiers (ex did:bnb and did:dnd:testnet)
