@@ -177,12 +177,12 @@ contract DIDRegistry is IDidRegistry {
         }
     }
 
-    function addNativeController(string calldata didId, address controller) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) returns(bool) {
+    function addNativeController(string calldata didId, address controller) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
         require(!_doesNativeControllerExist(didId,controller), "Native controller already exist");
         didStates[didId].nativeControllers.push(controller);
     }
 
-    function removeNativeController(string calldata didId, address controller) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) returns(bool) {
+    function removeNativeController(string calldata didId, address controller) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) public returns(bool) {
         require(_getAddressFromDid(didId) != controller, "Cannot remove default authority key");
         require(_doesNativeControllerExist(didId,controller), "Native controller does not exist");
 
