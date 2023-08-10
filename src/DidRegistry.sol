@@ -177,6 +177,27 @@ contract DIDRegistry is IDidRegistry {
         }
     }
 
+    function addNativeController(string calldata didId, address controller) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) returns(bool) {
+        require(!_doesNativeControllerExist(didId,controller), "Native controller already exist");
+        didStates[didId].nativeControllers.push(controller);
+    }
+
+    function removeNativeController(string calldata didId, address controller) onlyNonGenerativeDid(didId) onlyAuthorizedKeys(didId) returns(bool) {
+        require(_getAddressFromDid(didId) != controller, "Cannot remove default authority key");
+        require(_doesNativeControllerExist(didId,controller), "Native controller does not exist");
+
+        DidState storage didState = didStates[didId];
+
+        for(uint i=0; i < didState.nativeControllers.length; i++) {
+            if(didState.nativeControllers[i] == controller) {
+                // Remove native controller from array (not built into solidity so manipulating array to remove)
+                didState.nativeControllers[i] = didState.nativeControllers[didState.nativeControllers.length - 1];
+                didState.nativeControllers.pop();
+                return true;
+            }
+        }
+    }
+
     function _isKeyAuthority(string calldata didId, address authority) internal view returns(bool) {
         DidState memory didState = resolveDidState(didId);
 
@@ -224,6 +245,16 @@ contract DIDRegistry is IDidRegistry {
         DidState memory didState = resolveDidState(didId);
         for(uint i=0; i < didState.services.length; i++) {
             if(stringCompare(didState.services[i].fragment,fragment)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function _doesNativeControllerExist(string calldata didId, address controller) internal view returns(bool) {
+        DidState memory didState = resolveDidState(didId);
+        for(uint i=0; i < didState.nativeControllers.length; i++) {
+            if(didState.nativeControllers[i] == controller) {
                 return true;
             }
         }
