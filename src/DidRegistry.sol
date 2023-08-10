@@ -81,7 +81,7 @@ contract DIDRegistry is IDidRegistry {
     /////////// didState Update public methods ////////
     function addVerificationMethod(address didIdentifier, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
 
-        require(!_doesVerificationMethodFragmentExist(didIdentifier, verificationMethod.fragment), "Verification method fragment already exist");
+        require(!_doesFragmentExist(didIdentifier, verificationMethod.fragment), "Verification method fragment already exist");
         
         // Apply a bitmask on the verificationMethodFlags
         bool hasOwnershipFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF)) != 0;
@@ -101,7 +101,7 @@ contract DIDRegistry is IDidRegistry {
         DidState storage didState = didStates[didIdentifier];
 
         require(didState.verificationMethods.length > 1, "Did must always have at least 1 verification method");
-        require(_doesVerificationMethodFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
+        require(_doesFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
 
         // Load verification method and validate it does not have a protected flag before removing
         for(uint i=0; i < didState.verificationMethods.length; i++) {
@@ -124,7 +124,7 @@ contract DIDRegistry is IDidRegistry {
     }
 
     function updateVerificationMethodFlags(address didIdentifier, string calldata fragment, uint16 flags) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
-        require(_doesVerificationMethodFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
+        require(_doesFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
 
         DidState storage didState = didStates[didIdentifier];
         // Load verification method and validate it does not have a protected flag before updating flags.
@@ -143,7 +143,7 @@ contract DIDRegistry is IDidRegistry {
     }
 
     function addService(address didIdentifier, Service calldata service) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
-        require(!_doesServiceFragmentExist(didIdentifier, service.fragment), "Fragment already exist on another service");
+        require(!_doesFragmentExist(didIdentifier, service.fragment), "Fragment already exist on another service");
 
         didStates[didIdentifier].services.push(service);
 
@@ -152,7 +152,7 @@ contract DIDRegistry is IDidRegistry {
     }
 
     function removeService(address didIdentifier, string calldata fragment) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
-        require(_doesServiceFragmentExist(didIdentifier, fragment), "Fragment not found");
+        require(_doesFragmentExist(didIdentifier, fragment), "Fragment not found");
 
         DidState storage didState = didStates[didIdentifier];
 
@@ -221,20 +221,20 @@ contract DIDRegistry is IDidRegistry {
         return defaultDidState;
     }
 
-    function _doesVerificationMethodFragmentExist(address didIdentifier, string calldata fragment) internal view returns(bool) {
+
+    function _doesFragmentExist(address didIdentifier, string calldata fragment) internal view returns(bool) {
         DidState storage didState = didStates[didIdentifier];
-        for(uint i=0; i < didState.verificationMethods.length; i++) {
-            if(_stringCompare(didState.verificationMethods[i].fragment, fragment)) {
+
+        // Check if fragment exist on any services 
+        for(uint i=0; i < didState.services.length; i++) {
+            if(_stringCompare(didState.services[i].fragment, fragment)) {
                 return true;
             }
         }
-        return false;
-    }
 
-    function _doesServiceFragmentExist(address didIdentifier, string calldata fragment) internal view returns(bool) {
-        DidState storage didState = didStates[didIdentifier];
-        for(uint i=0; i < didState.services.length; i++) {
-            if(_stringCompare(didState.services[i].fragment, fragment)) {
+        // Check if fragment exist on any verification methods
+        for(uint i=0; i < didState.verificationMethods.length; i++) {
+            if(_stringCompare(didState.verificationMethods[i].fragment, fragment)) {
                 return true;
             }
         }
