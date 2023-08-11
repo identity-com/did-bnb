@@ -32,12 +32,13 @@ contract DidRegistryBaseTest is DidRegistryTest {
         assertEq(didRegistry.isGenerativeDidState(user), false);
     }
 
-    function testFail_should_fail_to_initialize_didState_that_exist() public {
+    function test_revert_should_fail_to_initialize_didState_that_exist() public {
         address user = vm.addr(3);
 
         // Initialize
         didRegistry.initializeDidState(user);
         // Try to initialize an existing didState
+        vm.expectRevert("Did state already exist");
         didRegistry.initializeDidState(user);
     }
 }

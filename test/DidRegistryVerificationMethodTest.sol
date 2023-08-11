@@ -278,4 +278,22 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);
     }
 
+    function test_revert_should_not_be_able_to_update_verification_method_flags_if_vm_does_not_exist() public {
+        address user = vm.addr(1);
+        DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
+            fragment: 'verification-new-1',
+            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(user)
+        });
+
+        vm.startPrank(user); // Send transaction as the user
+        didRegistry.initializeDidState(user);
+
+        uint16 newFlags = uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE));
+
+        vm.expectRevert("Fragment does not match any verification methods with this did");
+        didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);
+    }
+
 }

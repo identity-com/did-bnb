@@ -87,6 +87,18 @@ contract DidRegistryControllerTest is DidRegistryTest {
         didRegistry.removeNativeController(user, user);
     }
 
+    function test_revert_should_fail_to_remove_controller_that_is_not_a_native_controllers() public {
+        address user = vm.addr(1);
+        address notController = vm.addr(2);
+
+        vm.startPrank(user); // Make transactions using users EOA
+        didRegistry.initializeDidState(user);
+
+
+        vm.expectRevert("Native controller does not exist");
+        didRegistry.removeNativeController(user, notController);
+    }
+
     function test_revert_should_fail_to_add_duplicate_external_controller() public {
         address user = vm.addr(1);
         string memory newController = "testExternalController";
@@ -98,6 +110,18 @@ contract DidRegistryControllerTest is DidRegistryTest {
 
         vm.expectRevert("External controller already exist");
         didRegistry.addExternalController(user, newController);
+    }
+
+    function test_revert_should_fail_to_remove_controller_that_is_not_an_external_controllers() public {
+        address user = vm.addr(1);
+        string memory newController = "testExternalController";
+
+        vm.startPrank(user); // Make transactions using users EOA
+        didRegistry.initializeDidState(user);
+
+
+        vm.expectRevert("External controller does not exist");
+        didRegistry.removeExternalController(user, newController);
     }
 
     function test_revert_should_fail_only_autorized_keys_can_add_native_controllers() public {
