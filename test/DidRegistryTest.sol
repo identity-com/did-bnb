@@ -11,6 +11,8 @@ contract DidRegistryTest is Test {
         didRegistry = new DIDRegistry();
     }
 
+    function test() public{} // Adding this line so this file doesn't show up in the code coverage report
+
 
     function _attemptToAddVerificationMethod(address user, DIDRegistry.VerificationMethod memory newVm) internal  {
         didRegistry.initializeDidState(user);
