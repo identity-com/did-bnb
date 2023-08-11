@@ -295,7 +295,7 @@ contract DIDRegistry is IDidRegistry {
         return false;
     }
 
-    function _stringCompare(string memory str1, string memory str2) public pure returns (bool) {
+    function _stringCompare(string memory str1, string memory str2) internal pure returns (bool) {
         if (bytes(str1).length != bytes(str2).length) {
             return false;
         }
