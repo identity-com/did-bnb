@@ -209,7 +209,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         uint16 newFlags = uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE));
 
-        bool result = didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);
+        didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);
     }
 
 }

@@ -49,7 +49,7 @@ contract DidRegistryServiceTest is DidRegistryTest {
         vm.startPrank(vm.addr(2)); // Attempt to add a service from from another address
         DIDRegistry.Service memory service = DIDRegistry.Service("test-fragment","testType","testEndpoint");
 
-        vm.expectRevert(bytes("Message sender is not the owner of this did"));
+        vm.expectRevert(bytes("Message sender is not an authorized user of this did"));
         didRegistry.addService(user, service);
         
     }
@@ -94,7 +94,7 @@ contract DidRegistryServiceTest is DidRegistryTest {
         vm.stopPrank();
 
         vm.startPrank(vm.addr(2)); // Attempt to trigger transaction as non-authorized user
-        vm.expectRevert(bytes("Message sender is not the owner of this did"));
+        vm.expectRevert(bytes("Message sender is not an authorized user of this did"));
         didRegistry.removeService(user, service.fragment);
     }
     function test_Revert_if_attempting_to_remove_a_service_that_does_not_exist() public {

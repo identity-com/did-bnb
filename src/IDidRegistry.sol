@@ -12,7 +12,7 @@ interface IDidRegistry {
     event ServiceAdded(address indexed didIdentifier, string indexed fragment);
     event ServiceRemoved(address indexed didIdentifier, string indexed fragment);
 
-    event ControllerAdded();
-    event ControllerRemoved();
+    event ControllerAdded(address indexed didIdentifier, bytes newController, bool isNative);
+    event ControllerRemoved(address indexed didIdentifier, bytes removedController, bool isNative);
 
 }

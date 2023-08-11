@@ -47,7 +47,7 @@ contract DIDRegistry is IDidRegistry {
     
 
     modifier onlyAuthorizedKeys(address didIdentifier) {
-        require(msg.sender == didIdentifier || _isKeyAuthority(didIdentifier, msg.sender), "Message sender is not the owner of this did");
+        require(msg.sender == didIdentifier || _isKeyAuthority(didIdentifier, msg.sender), "Message sender is not an authorized user of this did");
         _;
     }
 
@@ -140,6 +140,7 @@ contract DIDRegistry is IDidRegistry {
                 return true;
             }
         }
+        return false;
     }
 
     function addService(address didIdentifier, Service calldata service) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
@@ -166,11 +167,15 @@ contract DIDRegistry is IDidRegistry {
                 return true;
             }
         }
+        return false;
     }
 
     function addNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
         require(!_doesNativeControllerExist(didIdentifier,controller), "Native controller already exist");
         didStates[didIdentifier].nativeControllers.push(controller);
+        
+        emit ControllerAdded(didIdentifier, abi.encodePacked(controller), true);
+        return true;
     }
 
     function removeNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
@@ -184,9 +189,38 @@ contract DIDRegistry is IDidRegistry {
                 // Remove native controller from array (not built into solidity so manipulating array to remove)
                 didState.nativeControllers[i] = didState.nativeControllers[didState.nativeControllers.length - 1];
                 didState.nativeControllers.pop();
+
+                emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), true);
                 return true;
             }
         }
+        return false;
+    }
+
+     function addExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+        require(!_doesExternalControllerExist(didIdentifier,controller), "External controller already exist");
+        didStates[didIdentifier].externalControllers.push(controller);
+
+        emit ControllerAdded(didIdentifier, abi.encodePacked(controller), false);
+        return true;
+    }
+
+    function removeExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+        require(_doesExternalControllerExist(didIdentifier,controller), "External controller does not exist");
+
+        DidState storage didState = didStates[didIdentifier];
+
+        for(uint i=0; i < didState.externalControllers.length; i++) {
+            if(_stringCompare(didState.externalControllers[i], controller)) {
+                // Remove native controller from array (not built into solidity so manipulating array to remove)
+                didState.externalControllers[i] = didState.externalControllers[didState.externalControllers.length - 1];
+                didState.externalControllers.pop();
+
+                emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), false);
+                return true;
+            }
+        }
+        return false;
     }
 
     function _isKeyAuthority(address didIdentifier, address authority) internal view returns(bool) {
@@ -245,6 +279,16 @@ contract DIDRegistry is IDidRegistry {
         DidState storage didState = didStates[didIdentifier];
         for(uint i=0; i < didState.nativeControllers.length; i++) {
             if(didState.nativeControllers[i] == controller) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function _doesExternalControllerExist(address didIdentifier, string calldata controller) internal view returns(bool) {
+        DidState storage didState = didStates[didIdentifier];
+        for(uint i=0; i < didState.externalControllers.length; i++) {
+            if(_stringCompare(didState.externalControllers[i], controller)) {
                 return true;
             }
         }
