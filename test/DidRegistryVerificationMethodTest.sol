@@ -79,7 +79,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         assertEq(finalState.verificationMethods[1].flags,newFlags);
     }
 
-    function testFail_only_did_authorized_keys_can_add_verification_methods() public {
+    function test_revert_only_did_authorized_keys_can_add_verification_methods() public {
         address user = vm.addr(1);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
@@ -91,11 +91,17 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         address nonAuthorizedUser = vm.addr(2);
 
+        vm.startPrank(user);
+        didRegistry.initializeDidState(user);
+        vm.stopPrank();
+
         vm.startPrank(nonAuthorizedUser); // Send transaction as the nonAuthorizedUser
-        _attemptToAddVerificationMethod(user, newVm);
+
+        vm.expectRevert("Message sender is not an authorized user of this did");
+        didRegistry.addVerificationMethod(user, newVm);
     }
 
-    function testFail_only_did_authorized_keys_can_remove_verification_methods() public {
+    function test_revert_only_did_authorized_keys_can_remove_verification_methods() public {
         address user = vm.addr(1);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
@@ -114,10 +120,11 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         address nonAuthorizedUser = vm.addr(2);
         vm.startPrank(nonAuthorizedUser); // Send transaction as the nonAuthorizedUser
 
+        vm.expectRevert("Message sender is not an authorized user of this did");
         didRegistry.removeVerificationMethod(user, newVm.fragment);
     }
 
-    function testFail_should_not_be_able_to_remove_verification_method_that_does_not_exist() public {
+    function test_revert_should_not_be_able_to_remove_verification_method_that_does_not_exist() public {
         address user = vm.addr(1);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
@@ -129,17 +136,21 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         // Do not add verification method
 
-       vm.startPrank(user); // Send transaction as the user
+        vm.startPrank(user); // Send transaction as the user
 
-        didRegistry.removeVerificationMethod(user, newVm.fragment);
+        didRegistry.initializeDidState(user);
+        didRegistry.addVerificationMethod(user, newVm);
+
+        vm.expectRevert("Fragment does not match any verification methods with this did");
+        didRegistry.removeVerificationMethod(user, "non-existant-fragment");
     }
 
-    function testFail_should_not_be_able_to_remove_verification_method_with_protected_flag() public {
+    function test_revert_should_not_be_able_to_remove_verification_method_with_protected_flag() public {
         address user = vm.addr(1);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -147,19 +158,24 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         vm.startPrank(user); // Send transaction as the user
 
         _attemptToAddVerificationMethod(user, newVm);
+        // attempt to remove the default protected verification method
 
-        didRegistry.removeVerificationMethod(user, newVm.fragment);
+        vm.expectRevert("Cannot remove verification method because of protected flag");
+        didRegistry.removeVerificationMethod(user, "verification-default");
     }
 
-    function testFail_should_not_be_able_to_remove_verification_method_if_there_is_only_one() public {
+    function test_revert__should_not_be_able_to_remove_verification_method_if_there_is_only_one() public {
         address user = vm.addr(1);
 
         vm.startPrank(user); // Send transaction as the user
 
-        didRegistry.removeVerificationMethod(user, 'verification-default');
+        didRegistry.initializeDidState(user);
+
+        vm.expectRevert("Did must always have at least 1 verification method");
+        didRegistry.removeVerificationMethod(user, 'any');
     }
 
-    function testFail_should_not_be_able_to_create_duplicate_verification_methods() public {
+    function test_revert_should_not_be_able_to_create_duplicate_verification_methods() public {
         address user = vm.addr(1);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
@@ -171,25 +187,49 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         vm.startPrank(user); // Send transaction as the user
 
-        _attemptToAddVerificationMethod(user, newVm);
+        didRegistry.initializeDidState(user);
+
+        vm.expectRevert("Fragment already exist");
+        didRegistry.addVerificationMethod(user, newVm);
     }
     
-    function testFail_should_not_be_able_to_verification_methods_with_ownership_and_protected_flags() public {
+    function test_revert_should_not_be_able_to_verification_methods_with_ownership_flag() public {
         address user = vm.addr(1);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'test-fragment',
-            flags: uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED),
+            flags: uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
 
         vm.startPrank(user); // Send transaction as the user
 
-        _attemptToAddVerificationMethod(user, newVm);
+        didRegistry.initializeDidState(user);
+
+        vm.expectRevert("Cannot add verification method with ownership_proof or protected flags");
+        didRegistry.addVerificationMethod(user, newVm);
     }
 
-    function testFail_only_authorized_keys_should_be_able_to_update_verification_method_flags() public {
+    function test_revert_should_not_be_able_to_verification_methods_with_protected_flag() public {
+        address user = vm.addr(1);
+
+        DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
+            fragment: 'test-fragment',
+            flags: uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED),
+            methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(user)
+        });
+
+        vm.startPrank(user); // Send transaction as the user
+
+        didRegistry.initializeDidState(user);
+
+        vm.expectRevert("Cannot add verification method with ownership_proof or protected flags");
+        didRegistry.addVerificationMethod(user, newVm);
+    }
+
+    function test_revert_only_authorized_keys_should_be_able_to_update_verification_method_flags() public {
         address user = vm.addr(1);
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
@@ -209,6 +249,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         uint16 newFlags = uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE));
 
+        vm.expectRevert("Message sender is not an authorized user of this did");
         didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);
     }
 

@@ -81,7 +81,7 @@ contract DIDRegistry is IDidRegistry {
     /////////// didState Update public methods ////////
     function addVerificationMethod(address didIdentifier, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
 
-        require(!_doesFragmentExist(didIdentifier, verificationMethod.fragment), "Verification method fragment already exist");
+        require(!_doesFragmentExist(didIdentifier, verificationMethod.fragment), "Fragment already exist");
         
         // Apply a bitmask on the verificationMethodFlags
         bool hasOwnershipFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF)) != 0;
