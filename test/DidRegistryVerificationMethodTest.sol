@@ -56,6 +56,32 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         assertEq(finalState.verificationMethods.length,1);
     }
 
+    function test_authorized_user_should_remove_verification_method() public {
+        address user = vm.addr(1);
+        address nonAuthorizedUser = vm.addr(2);
+
+        DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
+            fragment: 'verification-new-1',
+            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION)),
+            methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(nonAuthorizedUser)
+        });
+
+        vm.startPrank(user); // Send transaction as the authorized user
+
+        _attemptToAddVerificationMethod(user, newVm);
+
+        vm.stopPrank();
+
+        vm.startPrank(nonAuthorizedUser);
+
+        didRegistry.removeVerificationMethod(user, newVm.fragment);
+
+        DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(user);
+
+        assertEq(finalState.verificationMethods.length,1);
+    }
+
     function test_should_update_verification_method_flags() public {
         address user = vm.addr(1);
 
@@ -79,17 +105,16 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         assertEq(finalState.verificationMethods[1].flags,newFlags);
     }
 
-    function test_revert_only_did_authorized_keys_can_add_verification_methods() public {
+    function test_revert_only_authorized_keys_can_add_verification_methods() public {
         address user = vm.addr(1);
+        address nonAuthorizedUser = vm.addr(2);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'test-fragment',
             flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
-            keyData: abi.encodePacked(user)
+            keyData: abi.encodePacked(nonAuthorizedUser)
         });
-
-        address nonAuthorizedUser = vm.addr(2);
 
         vm.startPrank(user);
         didRegistry.initializeDidState(user);
