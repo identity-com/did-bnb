@@ -79,7 +79,7 @@ contract DIDRegistry is IDidRegistry {
     }
 
     /////////// didState Update public methods ////////
-    function addVerificationMethod(address didIdentifier, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+    function addVerificationMethod(address didIdentifier, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public {
 
         require(!_doesFragmentExist(didIdentifier, verificationMethod.fragment), "Fragment already exist");
         
@@ -94,7 +94,6 @@ contract DIDRegistry is IDidRegistry {
         didStates[didIdentifier].verificationMethods.push(verificationMethod);
         
         emit VerificationMethodAdded(didIdentifier, verificationMethod.fragment);
-        return true;
     }
 
     function removeVerificationMethod(address didIdentifier, string calldata fragment) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
@@ -143,13 +142,12 @@ contract DIDRegistry is IDidRegistry {
         return false;
     }
 
-    function addService(address didIdentifier, Service calldata service) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+    function addService(address didIdentifier, Service calldata service) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public {
         require(!_doesFragmentExist(didIdentifier, service.fragment), "Fragment already exist on another service");
 
         didStates[didIdentifier].services.push(service);
 
         emit ServiceAdded(didIdentifier, service.fragment);
-        return true;
     }
 
     function removeService(address didIdentifier, string calldata fragment) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
@@ -170,12 +168,11 @@ contract DIDRegistry is IDidRegistry {
         return false;
     }
 
-    function addNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+    function addNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public {
         require(!_doesNativeControllerExist(didIdentifier,controller), "Native controller already exist");
         didStates[didIdentifier].nativeControllers.push(controller);
         
         emit ControllerAdded(didIdentifier, abi.encodePacked(controller), true);
-        return true;
     }
 
     function removeNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
@@ -197,12 +194,11 @@ contract DIDRegistry is IDidRegistry {
         return false;
     }
 
-     function addExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+     function addExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public  {
         require(!_doesExternalControllerExist(didIdentifier,controller), "External controller already exist");
         didStates[didIdentifier].externalControllers.push(controller);
 
         emit ControllerAdded(didIdentifier, abi.encodePacked(controller), false);
-        return true;
     }
 
     function removeExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
