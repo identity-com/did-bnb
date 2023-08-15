@@ -84,8 +84,8 @@ contract DIDRegistry is IDidRegistry {
         require(!_doesFragmentExist(didIdentifier, verificationMethod.fragment), "Fragment already exist");
         
         // Apply a bitmask on the verificationMethodFlags
-        bool hasOwnershipFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF)) != 0;
-        bool hasProtectedFlag = verificationMethod.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED)) != 0;
+        bool hasOwnershipFlag =  _hasFlag(verificationMethod.flags, VerificationMethodFlagBitMask.OWNERSHIP_PROOF);
+        bool hasProtectedFlag = _hasFlag(verificationMethod.flags, VerificationMethodFlagBitMask.PROTECTED);
 
         bool isValidVerificationMethod = !hasOwnershipFlag && !hasProtectedFlag;
 
@@ -100,7 +100,7 @@ contract DIDRegistry is IDidRegistry {
     function removeVerificationMethod(address didIdentifier, string calldata fragment) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
         DidState storage didState = didStates[didIdentifier];
 
-        require(didState.verificationMethods.length > 1, "Did must always have at least 1 verification method");
+        require(didState.verificationMethods.length > 1, "Cannot remove verification method. Did must always have at least 1 verification method");
         require(_doesFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
 
         // Load verification method and validate it does not have a protected flag before removing
@@ -109,7 +109,7 @@ contract DIDRegistry is IDidRegistry {
             VerificationMethod storage vm = didState.verificationMethods[i];
 
             if(_stringCompare(vm.fragment, fragment)) {
-                bool hasProtectedFlag = vm.flags & uint16(uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED)) != 0;
+                bool hasProtectedFlag = _hasFlag(vm.flags, VerificationMethodFlagBitMask.PROTECTED);
                 require(!hasProtectedFlag, "Cannot remove verification method because of protected flag");
 
                 // Remove verification method from array (not built into solidity so manipulating array to remove)
@@ -230,7 +230,7 @@ contract DIDRegistry is IDidRegistry {
             // Iterate through verification methods looking for key
             if(address(bytes20(didState.verificationMethods[i].keyData)) == authority) {
                 // Does the key authority have permission to invoke
-                return uint16(1) << uint16(VerificationMethodFlagBitMask.CAPABILITY_INVOCATION) != 0;
+                return _hasFlag(didState.verificationMethods[i].flags, VerificationMethodFlagBitMask.CAPABILITY_INVOCATION);
             }
         }
         return false;
@@ -300,5 +300,9 @@ contract DIDRegistry is IDidRegistry {
             return false;
         }
         return keccak256(abi.encodePacked(str1)) == keccak256(abi.encodePacked(str2));
+    }
+
+    function _hasFlag(uint16 flags, VerificationMethodFlagBitMask flag) internal pure returns(bool) {
+        return flags & uint16(uint16(1) << uint16(flag)) != 0;
     }
 }

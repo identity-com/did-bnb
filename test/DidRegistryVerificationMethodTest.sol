@@ -196,7 +196,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         didRegistry.initializeDidState(user);
 
-        vm.expectRevert("Did must always have at least 1 verification method");
+        vm.expectRevert("Cannot remove verification method. Did must always have at least 1 verification method");
         didRegistry.removeVerificationMethod(user, 'any');
     }
 
