@@ -43,7 +43,7 @@ contract DIDRegistry is IDidRegistry {
 
     mapping(address => DidState) private didStates; // Mapping from didIdentifier to the state
 
-    uint16 private DEFAULT_VERIFICATION_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED);
+    uint16 private constant DEFAULT_VERIFICATION_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED);
     
 
     modifier onlyAuthorizedKeys(address didIdentifier) {
