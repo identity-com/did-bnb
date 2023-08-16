@@ -11,12 +11,12 @@ contract DidRegistryBaseTest is DidRegistryTest {
 
         DIDRegistry.DidState memory defaultState = didRegistry.resolveDidState(user);
 
-        //Default the didState should be protected and have an ownership proof and is protected
+        //Default the didState should be Invocation and have an ownership proof
         assertEq(
             defaultState.verificationMethods[0].flags, 
-            uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED)
+            uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION)
         );
-        assertEq(defaultState.verificationMethods[0].fragment,"verification-default");
+        assertEq(defaultState.verificationMethods[0].fragment,"default");
         
         // Verify the key on the default verification method matches the address in the did
         assertEq(address(bytes20(defaultState.verificationMethods[0].keyData)), user);

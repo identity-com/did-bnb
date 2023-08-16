@@ -175,7 +175,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(0),
+            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED)),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -186,7 +186,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         // attempt to remove the default protected verification method
 
         vm.expectRevert("Cannot remove verification method because of protected flag");
-        didRegistry.removeVerificationMethod(user, "verification-default");
+        didRegistry.removeVerificationMethod(user, newVm.fragment);
     }
 
     function test_revert__should_not_be_able_to_remove_verification_method_if_there_is_only_one() public {
@@ -204,7 +204,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         address user = vm.addr(1);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
-            fragment: 'verification-default', // Should fail because this fragment matchs the same name as the default verification method
+            fragment: 'default', // Should fail because this fragment matchs the same name as the default verification method
             flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
