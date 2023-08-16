@@ -1,134 +1,92 @@
 /* SPDX-License-Identifier: MIT */
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
-contract DIDRegistryEvents {
-    event DIDOwnerChanged(
-        address indexed identity,
-        address owner,
-        uint previousChange
-    );
+import "./IDidRegistry.sol";
 
-    event DIDDelegateChanged(
-        address indexed identity,
-        bytes32 delegateType,
-        address delegate,
-        uint validTo,
-        uint previousChange
-    );
+contract DIDRegistry is IDidRegistry {
 
-    event DIDAttributeChanged(
-        address indexed identity,
-        bytes32 name,
-        bytes value,
-        uint validTo,
-        uint previousChange
-    );
-}
-
-contract DIDRegistry is DIDRegistryEvents {
-
-    mapping(address => address) public owners;
-    mapping(address => mapping(bytes32 => mapping(address => uint))) public delegates;
-    mapping(address => uint) public changed;
-    mapping(address => uint) public nonce;
-
-    modifier onlyOwner(address identity, address actor) {
-        require (actor == identityOwner(identity), "bad_actor");
-        _;
+    enum VerificationMethodType { 
+        EcdsaSecp256k1RecoveryMethod // Verification Method for For 20-bytes Ethereum Keys
     }
 
-    function identityOwner(address identity) public view returns(address) {
-        address owner = owners[identity];
-        if (owner != address(0x00)) {
-            return owner;
+    // Each flag is represented by a specific bit. This enum specifies what flag corresponds to which bit.
+    enum VerificationMethodFlagBitMask {
+        NONE, // bit 0
+        AUTHENTICATION, // bit 1
+        ASSERTION, // bit 2
+        CAPABILITY_INVOCATION, // bit 3
+        CAPABILITY_DELEGATION, // bit 4
+        OWNERSHIP_PROOF, // bit 5
+        PROTECTED // bit 6
+    }
+
+    struct VerificationMethod {
+        string fragment;
+        uint16 flags; // The permissions this key has where each bit corresponds to a configuration flag
+        VerificationMethodType methodType;
+        bytes keyData; // Key data to match the given verification type. Each verification method type has differentlly formatted keyData
+    }
+
+    struct Service {
+        string fragment; //TODO: Are fragments globally unique? Ie can a service and a verification method have the same fragment?
+        string service_type;
+        string service_endpoint;
+    }
+
+    struct DidState {
+        VerificationMethod[] verificationMethods;
+        Service[] services;
+        address[] nativeControllers;
+        string[] externalControllers;
+    }
+
+    mapping(address => DidState) private didStates; // Mapping from didId to the state
+
+    uint16 private DEFAULT_VERIFICATION_METHOD_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.CAPABILITY_INVOCATION);
+    
+    bytes16 private constant _HEX_DIGITS = "0123456789abcdef";
+    uint8 private constant _ADDRESS_LENGTH = 20;
+    
+    //////// Fetching/Resolving Did /////////////
+    function resolveDidState(address didIdentifier) external view returns(DidState memory) {
+        if(isGenerativeDidState(didIdentifier)) {
+            return _getDefaultDidState(didIdentifier);
         }
-        return identity;
+
+        return didStates[didIdentifier];
     }
 
-    function checkSignature(address identity, uint8 sigV, bytes32 sigR, bytes32 sigS, bytes32 hash) internal returns(address) {
-        address signer = ecrecover(hash, sigV, sigR, sigS);
-        require(signer == identityOwner(identity), "bad_signature");
-        nonce[signer]++;
-        return signer;
+    function initializeDidState(address didIdentifier) external {
+        require(isGenerativeDidState(didIdentifier), "Did state already exist");
+
+        DidState memory defaultDidState = _getDefaultDidState(didIdentifier);
+
+        didStates[didIdentifier].verificationMethods.push(defaultDidState.verificationMethods[0]);
     }
 
-    function validDelegate(address identity, bytes32 delegateType, address delegate) public view returns(bool) {
-        uint validity = delegates[identity][keccak256(abi.encode(delegateType))][delegate];
-        return (validity > block.timestamp);
+    function isGenerativeDidState(address didIdentifier) public view returns(bool) {
+        DidState memory didState = didStates[didIdentifier];
+        return didState.verificationMethods.length == 0;
     }
 
-    function changeOwner(address identity, address actor, address newOwner) internal onlyOwner(identity, actor) {
-        owners[identity] = newOwner;
-        emit DIDOwnerChanged(identity, newOwner, changed[identity]);
-        changed[identity] = block.number;
+    function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
+        return VerificationMethod({
+            fragment: 'default',
+            flags: DEFAULT_VERIFICATION_METHOD_FLAGS,
+            methodType: VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(authorityKey)
+        });
     }
 
-    function changeOwner(address identity, address newOwner) public {
-        changeOwner(identity, msg.sender, newOwner);
-    }
+    function _getDefaultDidState(address didIdentifier) internal view returns(DidState memory) {
 
-    function changeOwnerSigned(address identity, uint8 sigV, bytes32 sigR, bytes32 sigS, address newOwner) public {
-        bytes32 hash = keccak256(abi.encodePacked(bytes1(0x19), bytes1(0), this, nonce[identityOwner(identity)], identity, "changeOwner", newOwner));
-        changeOwner(identity, checkSignature(identity, sigV, sigR, sigS, hash), newOwner);
-    }
+        DidState memory defaultDidState;
 
-    function addDelegate(address identity, address actor, bytes32 delegateType, address delegate, uint validity) internal onlyOwner(identity, actor) {
-        delegates[identity][keccak256(abi.encode(delegateType))][delegate] = block.timestamp + validity;
-        emit DIDDelegateChanged(identity, delegateType, delegate, block.timestamp + validity, changed[identity]);
-        changed[identity] = block.number;
-    }
+        defaultDidState.verificationMethods = new VerificationMethod[](1);
+        defaultDidState.verificationMethods[0] = _getDefaultVerificationMethod(didIdentifier);
 
-    function addDelegate(address identity, bytes32 delegateType, address delegate, uint validity) public {
-        addDelegate(identity, msg.sender, delegateType, delegate, validity);
-    }
-
-    function addDelegateSigned(address identity, uint8 sigV, bytes32 sigR, bytes32 sigS, bytes32 delegateType, address delegate, uint validity) public {
-        bytes32 hash = keccak256(abi.encodePacked(bytes1(0x19), bytes1(0), this, nonce[identityOwner(identity)], identity, "addDelegate", delegateType, delegate, validity));
-        addDelegate(identity, checkSignature(identity, sigV, sigR, sigS, hash), delegateType, delegate, validity);
-    }
-
-    function revokeDelegate(address identity, address actor, bytes32 delegateType, address delegate) internal onlyOwner(identity, actor) {
-        delegates[identity][keccak256(abi.encode(delegateType))][delegate] = block.timestamp;
-        emit DIDDelegateChanged(identity, delegateType, delegate, block.timestamp, changed[identity]);
-        changed[identity] = block.number;
-    }
-
-    function revokeDelegate(address identity, bytes32 delegateType, address delegate) public {
-        revokeDelegate(identity, msg.sender, delegateType, delegate);
-    }
-
-    function revokeDelegateSigned(address identity, uint8 sigV, bytes32 sigR, bytes32 sigS, bytes32 delegateType, address delegate) public {
-        bytes32 hash = keccak256(abi.encodePacked(bytes1(0x19), bytes1(0), this, nonce[identityOwner(identity)], identity, "revokeDelegate", delegateType, delegate));
-        revokeDelegate(identity, checkSignature(identity, sigV, sigR, sigS, hash), delegateType, delegate);
-    }
-
-    function setAttribute(address identity, address actor, bytes32 name, bytes memory value, uint validity ) internal onlyOwner(identity, actor) {
-        emit DIDAttributeChanged(identity, name, value, block.timestamp + validity, changed[identity]);
-        changed[identity] = block.number;
-    }
-
-    function setAttribute(address identity, bytes32 name, bytes memory value, uint validity) public {
-        setAttribute(identity, msg.sender, name, value, validity);
-    }
-
-    function setAttributeSigned(address identity, uint8 sigV, bytes32 sigR, bytes32 sigS, bytes32 name, bytes memory value, uint validity) public {
-        bytes32 hash = keccak256(abi.encodePacked(bytes1(0x19), bytes1(0), this, nonce[identityOwner(identity)], identity, "setAttribute", name, value, validity));
-        setAttribute(identity, checkSignature(identity, sigV, sigR, sigS, hash), name, value, validity);
-    }
-
-    function revokeAttribute(address identity, address actor, bytes32 name, bytes memory value ) internal onlyOwner(identity, actor) {
-        emit DIDAttributeChanged(identity, name, value, 0, changed[identity]);
-        changed[identity] = block.number;
-    }
-
-    function revokeAttribute(address identity, bytes32 name, bytes memory value) public {
-        revokeAttribute(identity, msg.sender, name, value);
-    }
-
-    function revokeAttributeSigned(address identity, uint8 sigV, bytes32 sigR, bytes32 sigS, bytes32 name, bytes memory value) public {
-        bytes32 hash = keccak256(abi.encodePacked(bytes1(0x19), bytes1(0), this, nonce[identityOwner(identity)], identity, "revokeAttribute", name, value));
-        revokeAttribute(identity, checkSignature(identity, sigV, sigR, sigS, hash), name, value);
+        return defaultDidState;
     }
 
 }
