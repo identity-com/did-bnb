@@ -43,7 +43,7 @@ contract DIDRegistry is IDidRegistry {
 
     mapping(address => DidState) private didStates; // Mapping from didId to the state
 
-    uint16 private DEFAULT_VERIFICATION_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED);
+    uint16 private DEFAULT_VERIFICATION_METHOD_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.CAPABILITY_INVOCATION);
     
     bytes16 private constant _HEX_DIGITS = "0123456789abcdef";
     uint8 private constant _ADDRESS_LENGTH = 20;
@@ -72,8 +72,8 @@ contract DIDRegistry is IDidRegistry {
 
     function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
-            fragment: 'verification-default',
-            flags: DEFAULT_VERIFICATION_FLAGS,
+            fragment: 'default',
+            flags: DEFAULT_VERIFICATION_METHOD_FLAGS,
             methodType: VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(authorityKey)
         });
