@@ -2,9 +2,12 @@
 
 pragma solidity ^0.8.19;
 
+import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./IDidRegistry.sol";
 
-contract DIDRegistry is IDidRegistry {
+contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     enum VerificationMethodType { 
         EcdsaSecp256k1RecoveryMethod // Verification Method for For 20-bytes Ethereum Keys
@@ -47,6 +50,16 @@ contract DIDRegistry is IDidRegistry {
     
     bytes16 private constant _HEX_DIGITS = "0123456789abcdef";
     uint8 private constant _ADDRESS_LENGTH = 20;
+
+    ///@dev no constructor in upgradable contracts. Instead we have initializers
+    function initialize() public initializer {
+        // Need to figure out logic for admin control
+        ///@dev as there is no constructor, we need to initialise the OwnableUpgradeable explicitly
+       __Ownable_init();
+    }
+
+    ///@dev Required by the OZ UUPS module
+   function _authorizeUpgrade(address) internal override onlyOwner {}
     
     //////// Fetching/Resolving Did /////////////
     function resolveDidState(address didIdentifier) external view returns(DidState memory) {
