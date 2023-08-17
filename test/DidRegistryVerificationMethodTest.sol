@@ -149,7 +149,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         didRegistry.removeVerificationMethod(user, newVm.fragment);
     }
 
-    function test_revert_only_authorized_key_can_update_ownership_proof_flag_on_verification_method() public {
+    function test_revert_only_authorized_key_can_remove_ownership_proof_flag_on_verification_method() public {
         address userOne = vm.addr(1);
         address userTwo = vm.addr(2);
 
@@ -174,10 +174,34 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         vm.expectRevert("Only the verification method authority key can set the ownership proof or protected flags");
 
-        bool result = didRegistry.updateVerificationMethodFlags(userTwo, 'default', newFlags);
+        didRegistry.updateVerificationMethodFlags(userTwo, 'default', newFlags);
     }
 
-    function test_revert_only_authorized_key_can_update_protected_flag_on_verification_methods() public {
+    function test_revert_only_authorized_key_can_add_ownership_proof_flag_on_verification_method() public {
+        address userOne = vm.addr(1);
+        address userTwo = vm.addr(2);
+
+        vm.startPrank(userTwo); // Send transaction as the userTwo
+
+        // Add a verification method for userOne on userTwo's didState
+        DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
+            fragment: 'verification-new-1',
+            flags: uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION),
+            methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(userOne) 
+        });
+
+        _attemptToAddVerificationMethod(userTwo, newVm);
+
+        // Attempt to add ownership flag to new vm as userTwo
+        uint16 newFlags = uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF);
+
+        vm.expectRevert("Only the verification method authority key can set the ownership proof or protected flags");
+
+        didRegistry.updateVerificationMethodFlags(userTwo, newVm.fragment, newFlags);
+    }
+
+    function test_revert_only_authorized_key_can_remove_protected_flag_on_verification_methods() public {
         address userOne = vm.addr(1);
         address userTwo = vm.addr(2);
 
@@ -202,7 +226,32 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         vm.expectRevert("Only the verification method authority key can set the ownership proof or protected flags");
 
-        bool result = didRegistry.updateVerificationMethodFlags(userTwo, 'default', newFlags);
+        didRegistry.updateVerificationMethodFlags(userTwo, 'default', newFlags);
+    }
+
+    function test_revert_only_authorized_key_can_add_protected_flag_on_verification_methods() public {
+        address userOne = vm.addr(1);
+        address userTwo = vm.addr(2);
+
+        vm.startPrank(userTwo); // Send transaction as the userTwo
+
+        // Add a verification method for userOne on userTwo's didState
+        DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
+            fragment: 'verification-new-1',
+            flags: uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION),
+            methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(userOne) 
+        });
+
+        _attemptToAddVerificationMethod(userTwo, newVm);
+
+
+        // Attempt to add ownership_proof flag to new verification method as userTwo
+        uint16 newFlags = uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED);
+
+        vm.expectRevert("Only the verification method authority key can set the ownership proof or protected flags");
+
+        didRegistry.updateVerificationMethodFlags(userTwo, newVm.fragment, newFlags);
     }
 
     function test_revert_should_not_be_able_to_remove_verification_method_that_does_not_exist() public {
