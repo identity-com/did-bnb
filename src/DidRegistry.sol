@@ -132,15 +132,15 @@ contract DIDRegistry is IDidRegistry {
 
             VerificationMethod storage vm = didState.verificationMethods[i];
 
-            // If trying to change the OWNERSHIP PROOF or PROTECTED flags the keyData must match the message sender
-            bool isUpdatingOwnershipFlag =  _hasFlag(vm.flags, VerificationMethodFlagBitMask.OWNERSHIP_PROOF) != _hasFlag(flags,VerificationMethodFlagBitMask.OWNERSHIP_PROOF);
-            bool isUpdatingProtectedFlag = _hasFlag(vm.flags, VerificationMethodFlagBitMask.PROTECTED)!= _hasFlag(flags,VerificationMethodFlagBitMask.PROTECTED);
-
-            if(isUpdatingOwnershipFlag || isUpdatingProtectedFlag) {
-                require(address(bytes20(vm.keyData)) == msg.sender, "Only the verification method authority key can set the ownership proof or protected flags");
-            }
-
             if(_stringCompare(vm.fragment, fragment)) {
+                // If trying to change the OWNERSHIP PROOF or PROTECTED flags the keyData must match the message sender
+                bool isUpdatingOwnershipFlag =  _hasFlag(vm.flags, VerificationMethodFlagBitMask.OWNERSHIP_PROOF) != _hasFlag(flags,VerificationMethodFlagBitMask.OWNERSHIP_PROOF);
+                bool isUpdatingProtectedFlag = _hasFlag(vm.flags, VerificationMethodFlagBitMask.PROTECTED)!= _hasFlag(flags,VerificationMethodFlagBitMask.PROTECTED);
+
+                if(isUpdatingOwnershipFlag || isUpdatingProtectedFlag) {
+                    require(address(bytes20(vm.keyData)) == msg.sender, "Only the verification method authority key can set the ownership proof or protected flags");
+                }
+                
                 uint16 oldFlags = didState.verificationMethods[i].flags;              
                 didState.verificationMethods[i].flags = flags;
 

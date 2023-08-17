@@ -174,7 +174,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         vm.expectRevert("Only the verification method authority key can set the ownership proof or protected flags");
 
-        bool result = didRegistry.updateVerificationMethodFlags(userTwo, newVm.fragment, newFlags);
+        bool result = didRegistry.updateVerificationMethodFlags(userTwo, 'default', newFlags);
     }
 
     function test_revert_only_authorized_key_can_update_protected_flag_on_verification_methods() public {
@@ -202,7 +202,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         vm.expectRevert("Only the verification method authority key can set the ownership proof or protected flags");
 
-        bool result = didRegistry.updateVerificationMethodFlags(userTwo, newVm.fragment, newFlags);
+        bool result = didRegistry.updateVerificationMethodFlags(userTwo, 'default', newFlags);
     }
 
     function test_revert_should_not_be_able_to_remove_verification_method_that_does_not_exist() public {
