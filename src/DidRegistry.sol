@@ -53,8 +53,8 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     ///@dev no constructor in upgradable contracts. Instead we have initializers
     function initialize() public initializer {
-        // Need to figure out logic for admin control
         ///@dev as there is no constructor, we need to initialise the OwnableUpgradeable explicitly
+        ///@dev sets owner of contract to deployer
        __Ownable_init();
     }
 
