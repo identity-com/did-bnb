@@ -10,7 +10,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -40,7 +40,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -87,7 +87,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -96,7 +96,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         _attemptToAddVerificationMethod(user, newVm);
 
-        uint16 newFlags = uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE));
+        uint16 newFlags = uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.ASSERTION));
 
         bool result = didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);
         DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(user);
@@ -111,7 +111,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'test-fragment',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(nonAuthorizedUser)
         });
@@ -131,7 +131,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -149,12 +149,68 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         didRegistry.removeVerificationMethod(user, newVm.fragment);
     }
 
+    function test_revert_only_authorized_key_can_update_ownership_proof_flag_on_verification_method() public {
+        address userOne = vm.addr(1);
+        address userTwo = vm.addr(2);
+
+        vm.startPrank(userTwo); // Send transaction as the userTwo
+
+        // Add a verification method for userOne on userTwo's didState
+        DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
+            fragment: 'verification-new-1',
+            flags: uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION),
+            methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(userOne) 
+        });
+
+        _attemptToAddVerificationMethod(userTwo, newVm);
+
+        vm.stopPrank();
+
+        vm.startPrank(userOne); // Send transaction as the userOne
+
+        // Remove ownership flag from default as userOne on userTwo's didState
+        uint16 newFlags = uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION);
+
+        vm.expectRevert("Only the verification method authority key can set the ownership proof or protected flags");
+
+        bool result = didRegistry.updateVerificationMethodFlags(userTwo, newVm.fragment, newFlags);
+    }
+
+    function test_revert_only_authorized_key_can_update_protected_flag_on_verification_methods() public {
+        address userOne = vm.addr(1);
+        address userTwo = vm.addr(2);
+
+        vm.startPrank(userTwo); // Send transaction as the userTwo
+
+        // Add a verification method for userOne on userTwo's didState
+        DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
+            fragment: 'verification-new-1',
+            flags: uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION),
+            methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(userOne) 
+        });
+
+        _attemptToAddVerificationMethod(userTwo, newVm);
+
+        vm.stopPrank();
+
+        vm.startPrank(userOne); // Send transaction as the userOne
+
+        // Remove protected flag from default as userOne on userTwo's didState
+        uint16 newFlags = uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION);
+
+        vm.expectRevert("Only the verification method authority key can set the ownership proof or protected flags");
+
+        bool result = didRegistry.updateVerificationMethodFlags(userTwo, newVm.fragment, newFlags);
+    }
+
     function test_revert_should_not_be_able_to_remove_verification_method_that_does_not_exist() public {
         address user = vm.addr(1);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -175,7 +231,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -186,7 +242,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         // attempt to remove the default protected verification method
 
         vm.expectRevert("Cannot remove verification method because of protected flag");
-        didRegistry.removeVerificationMethod(user, newVm.fragment);
+        didRegistry.removeVerificationMethod(user, 'default');
     }
 
     function test_revert__should_not_be_able_to_remove_verification_method_if_there_is_only_one() public {
@@ -205,7 +261,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'default', // Should fail because this fragment matchs the same name as the default verification method
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -258,7 +314,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         address user = vm.addr(1);
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -272,7 +328,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         address nonAuthorizedUser = vm.addr(2);
         vm.startPrank(nonAuthorizedUser); // Send transaction as the nonAuthorizedUser
 
-        uint16 newFlags = uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE));
+        uint16 newFlags = uint16(0);
 
         vm.expectRevert("Message sender is not an authorized user of this did");
         didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);
@@ -282,7 +338,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         address user = vm.addr(1);
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
-            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE)),
+            flags: uint16(0),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
             keyData: abi.encodePacked(user)
         });
@@ -290,7 +346,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         vm.startPrank(user); // Send transaction as the user
         didRegistry.initializeDidState(user);
 
-        uint16 newFlags = uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.NONE));
+        uint16 newFlags = uint16(0);
 
         vm.expectRevert("Fragment does not match any verification methods with this did");
         didRegistry.updateVerificationMethodFlags(user, newVm.fragment, newFlags);

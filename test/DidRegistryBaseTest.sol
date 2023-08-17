@@ -14,7 +14,7 @@ contract DidRegistryBaseTest is DidRegistryTest {
         //Default the didState should be Invocation and have an ownership proof
         assertEq(
             defaultState.verificationMethods[0].flags, 
-            uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION)
+            uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED)
         );
         assertEq(defaultState.verificationMethods[0].fragment,"default");
         

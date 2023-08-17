@@ -12,7 +12,7 @@ contract DIDRegistry is IDidRegistry {
 
     // Each flag is represented by a specific bit. This enum specifies what flag corresponds to which bit.
     enum VerificationMethodFlagBitMask {
-        NONE, // bit 0
+        KEY_AGREEMENT, // bit 0
         AUTHENTICATION, // bit 1
         ASSERTION, // bit 2
         CAPABILITY_INVOCATION, // bit 3
@@ -43,11 +43,11 @@ contract DIDRegistry is IDidRegistry {
 
     mapping(address => DidState) private didStates; // Mapping from didIdentifier to the state
 
-    uint16 private constant DEFAULT_VERIFICATION_METHOD_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.CAPABILITY_INVOCATION);
+    uint16 private constant DEFAULT_VERIFICATION_METHOD_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.CAPABILITY_INVOCATION) | uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED);
     
 
     modifier onlyAuthorizedKeys(address didIdentifier) {
-        require(msg.sender == didIdentifier || _isKeyAuthority(didIdentifier, msg.sender), "Message sender is not an authorized user of this did");
+        require(_isKeyAuthority(didIdentifier, msg.sender), "Message sender is not an authorized user of this did");
         _;
     }
 
@@ -126,10 +126,19 @@ contract DIDRegistry is IDidRegistry {
         require(_doesFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
 
         DidState storage didState = didStates[didIdentifier];
+
         // Load verification method and validate it does not have a protected flag before updating flags.
         for(uint i=0; i < didState.verificationMethods.length; i++) {
 
             VerificationMethod storage vm = didState.verificationMethods[i];
+
+            // If trying to change the OWNERSHIP PROOF or PROTECTED flags the keyData must match the message sender
+            bool isUpdatingOwnershipFlag =  _hasFlag(vm.flags, VerificationMethodFlagBitMask.OWNERSHIP_PROOF) != _hasFlag(flags,VerificationMethodFlagBitMask.OWNERSHIP_PROOF);
+            bool isUpdatingProtectedFlag = _hasFlag(vm.flags, VerificationMethodFlagBitMask.PROTECTED)!= _hasFlag(flags,VerificationMethodFlagBitMask.PROTECTED);
+
+            if(isUpdatingOwnershipFlag || isUpdatingProtectedFlag) {
+                require(address(bytes20(vm.keyData)) == msg.sender, "Only the verification method authority key can set the ownership proof or protected flags");
+            }
 
             if(_stringCompare(vm.fragment, fragment)) {
                 uint16 oldFlags = didState.verificationMethods[i].flags;              
