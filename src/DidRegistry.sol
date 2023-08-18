@@ -61,10 +61,11 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
         ///@dev as there is no constructor, we need to initialise the OwnableUpgradeable explicitly
         ///@dev sets owner of contract to deployer
        __Ownable_init();
+       __UUPSUpgradeable_init();
     }
 
     ///@dev Required by the OZ UUPS module
-   function _authorizeUpgrade(address) internal override onlyOwner {}
+   function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
     
     //////// Fetching/Resolving Did /////////////
     function resolveDidState(address didIdentifier) external view returns(DidState memory) {
