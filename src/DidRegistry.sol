@@ -144,6 +144,8 @@ contract DIDRegistry is IDidRegistry {
                 uint16 oldFlags = didState.verificationMethods[i].flags;              
                 didState.verificationMethods[i].flags = flags;
 
+                require(_hasAuthorityVerificationMethods(didIdentifier), "Cannot remove last authority verification method");
+
                 emit VerificationMethodFlagsUpdated(didIdentifier, fragment, oldFlags, flags);
                 return true;
             }
@@ -241,7 +243,7 @@ contract DIDRegistry is IDidRegistry {
         return false;
     }
 
-    function _getDefaultVerificationMethod(address authorityKey) internal view returns(VerificationMethod memory verificationMethod) {
+    function _getDefaultVerificationMethod(address authorityKey) internal pure returns(VerificationMethod memory verificationMethod) {
         return VerificationMethod({
             fragment: 'default',
             flags: DEFAULT_VERIFICATION_METHOD_FLAGS,
@@ -250,7 +252,7 @@ contract DIDRegistry is IDidRegistry {
         });
     }
 
-    function _getDefaultDidState(address didIdentifier) internal view returns(DidState memory) {
+    function _getDefaultDidState(address didIdentifier) internal pure returns(DidState memory) {
 
         DidState memory defaultDidState;
 
@@ -297,6 +299,18 @@ contract DIDRegistry is IDidRegistry {
                 return true;
             }
         }
+        return false;
+    }
+
+    function _hasAuthorityVerificationMethods(address didIdentifier) internal view returns(bool) {
+        DidState storage didState = didStates[didIdentifier];
+
+        for(uint i=0; i < didState.verificationMethods.length; i++) {
+            if(_hasFlag(didState.verificationMethods[i].flags, VerificationMethodFlagBitMask.CAPABILITY_INVOCATION)) {
+                return true;
+            }
+        }
+
         return false;
     }
 

@@ -149,6 +149,17 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         didRegistry.removeVerificationMethod(user, newVm.fragment);
     }
 
+    function test__revert_should_not_update_verification_method_to_prevent_lockout() public {
+        address user = vm.addr(1);
+
+        vm.startPrank(user); // Send transaction as the user
+
+        didRegistry.initializeDidState(user);
+
+        vm.expectRevert("Cannot remove last authority verification method");
+        didRegistry.updateVerificationMethodFlags(user, 'default', uint16(0));
+    }
+
     function test_revert_only_authorized_key_can_remove_ownership_proof_flag_on_verification_method() public {
         address userOne = vm.addr(1);
         address userTwo = vm.addr(2);
