@@ -8,12 +8,12 @@ The BNB DID method is a method for storing DIDs and managing DID documents on BN
 
 ## Creating DIDs
 
-*Any ethereum public key can be a DID.* This means that if you have a public key `abc`, then that key
-corresponds to the decentralized identifier `did:bnb:abc`.
+*Any ethereum public key can be a DID.* This means that if you have a public key `0xabc`, then that key
+corresponds to the decentralized identifier `did:bnb:0xabc`.
 
 This DID is called a `generative` DID, because it is generated from a public key, and has no other information associated with it.
 
-Generative DIDs have one authority, which is the public key itself (`abc` in this case).
+Generative DIDs have one authority, which is the public key itself (`0xabc` in this case).
 
 ## Updating DIDs
 
@@ -22,7 +22,19 @@ using the `initializeDidState` function.
 
 Once a DID is initialized new verification methods, services and controllers can be added/removed from the DIDs state.
 
+## DID State
+The state of a DID is stored in a mapping `didStates` where the keys are didIdentifiers and the values are a struct representing the state of a DID.
 
+ `mapping(address => DidState) private didStates;`
+
+ ```
+ struct DidState {
+        VerificationMethod[] verificationMethods;
+        Service[] services;
+        address[] nativeControllers;
+        string[] externalControllers;
+    }
+ ```
 
 ## Contract Functions
 
@@ -149,7 +161,18 @@ Arguments:
 
 Event Emitted: `ControllerRemoved`
 
-### Deployments
+## Deployments
 
 - Testnet: [0x75837371D170Bb8E5b74A968aDe00eDeaf59AD56](https://testnet.bscscan.com/address/0x75837371d170bb8e5b74a968ade00edeaf59ad56#code)
 
+
+## Developer Notes
+
+### Running unit test
+This project uses foundry for writing test. You can run the unit test suite by running:
+
+`forge test`
+
+To run the test and get a test coverage report you can run:
+
+`forge coverage`
