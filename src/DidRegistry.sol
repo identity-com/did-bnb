@@ -115,6 +115,9 @@ contract DIDRegistry is IDidRegistry {
                 didState.verificationMethods[i] = didState.verificationMethods[didState.verificationMethods.length - 1];
                 didState.verificationMethods.pop();
 
+                // Prevent lockout
+                require(_hasAuthorityVerificationMethod(didIdentifier), "Cannot remove last authority verification method");
+
                 emit VerificationMethodRemoved(didIdentifier, vm.fragment);
                 return true;
             }
@@ -144,7 +147,8 @@ contract DIDRegistry is IDidRegistry {
                 uint16 oldFlags = didState.verificationMethods[i].flags;              
                 didState.verificationMethods[i].flags = flags;
 
-                require(_hasAuthorityVerificationMethods(didIdentifier), "Cannot remove last authority verification method");
+                // Prevent lockout
+                require(_hasAuthorityVerificationMethod(didIdentifier), "Cannot remove last authority verification method");
 
                 emit VerificationMethodFlagsUpdated(didIdentifier, fragment, oldFlags, flags);
                 return true;
@@ -302,7 +306,7 @@ contract DIDRegistry is IDidRegistry {
         return false;
     }
 
-    function _hasAuthorityVerificationMethods(address didIdentifier) internal view returns(bool) {
+    function _hasAuthorityVerificationMethod(address didIdentifier) internal view returns(bool) {
         DidState storage didState = didStates[didIdentifier];
 
         for(uint i=0; i < didState.verificationMethods.length; i++) {
