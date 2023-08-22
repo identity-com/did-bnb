@@ -17,13 +17,12 @@ Generative DIDs have one authority, which is the public key itself (`0xabc` in t
 
 ## Updating DIDs
 
-In order to add more authorities, or any other information to the DID it must be initialised on chain,
-using the `initializeDidState` function.
+In order to add more authorities, or any other information to the DID it must be initialised on chain, the `initializeDidState` function must be called first.
 
 Once a DID is initialized new verification methods, services and controllers can be added/removed from the DIDs state.
 
 ## DID State
-The state of a DID is stored in a mapping `didStates` where the keys are didIdentifiers and the values are a struct representing the state of a DID.
+The state of a DID is stored in a mapping `didStates` where the keys are public keys coressponding to didIdentifiers and the values are a struct representing the state of a DID.
 
  `mapping(address => DidState) private didStates;`
 
