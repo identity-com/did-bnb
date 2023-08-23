@@ -1,6 +1,9 @@
 # Compiler files
 cache/
 out/
+ts-client/node_modules
+ts-client/types
+ts-client/yarn.lock
 
 # Ignores development broadcast logs
 !/broadcast
