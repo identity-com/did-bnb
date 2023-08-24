@@ -1,0 +1,25 @@
+{
+    "name": "did:bnb-ts-client",
+    "version": "1.0.0",
+    "main": "src/index.ts",
+    "license": "MIT",
+    "scripts": {
+      "generate-contract-types": "typechain --target=ethers-v6 ./abi/DIDRegistry.json",
+      "spawn-devnet": "tenderly devnet spawn-rpc --project project --template bnb-testnet"
+    },
+    "dependencies": {
+      "dotenv": "^16.3.1",
+      "ethers": "^6.7.1"
+    },
+    "devDependencies": {
+      "@typechain/ethers-v6": "^0.5.0",
+      "@types/jest": "^29.5.4",
+      "@types/node": "^20.5.1",
+      "jest": "^29.6.3",
+      "tenderly": "^0.5.3",
+      "ts-jest": "^29.1.1",
+      "ts-node": "^10.9.1",
+      "typechain": "^8.3.1",
+      "typescript": "^5.1.6"
+    }
+  }
