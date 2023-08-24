@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 import "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {DIDRegistry} from "../src/DidRegistry.sol";
+import { DidRegistryTest } from "./DidRegistryTest.sol";
 
 contract DIDRegistryTest is Test {
 
@@ -59,7 +59,7 @@ contract DIDRegistryTest is Test {
         //Default the didState should be Invocation and have an ownership proof
         assertEq(
             defaultState.verificationMethods[0].flags, 
-            uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION)
+            uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED)
         );
         assertEq(defaultState.verificationMethods[0].fragment,"default");
         
@@ -93,12 +93,13 @@ contract DIDRegistryTest is Test {
         wrappedProxy.transferOwnership(user);
     }
 
-    function testFail_should_fail_to_initialize_did_that_exist() public {
+    function test_revert_should_fail_to_initialize_didState_that_exist() public {
         address user = vm.addr(3);
 
         // Initialize
         didRegistry.initializeDidState(user);
         // Try to initialize an existing didState
+        vm.expectRevert("Did state already exist");
         didRegistry.initializeDidState(user);
     }
 }
