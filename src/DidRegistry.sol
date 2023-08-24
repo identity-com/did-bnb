@@ -2,9 +2,12 @@
 
 pragma solidity 0.8.19;
 
+import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./IDidRegistry.sol";
 
-contract DIDRegistry is IDidRegistry {
+contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     enum VerificationMethodType { 
         EcdsaSecp256k1RecoveryMethod // Verification Method for For 20-bytes Ethereum Keys
@@ -44,6 +47,22 @@ contract DIDRegistry is IDidRegistry {
     mapping(address => DidState) private didStates; // Mapping from didIdentifier to the state
 
     uint16 private constant DEFAULT_VERIFICATION_METHOD_FLAGS = uint16(1) << uint16(VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(VerificationMethodFlagBitMask.CAPABILITY_INVOCATION) | uint16(1) << uint16(VerificationMethodFlagBitMask.PROTECTED);
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    ///@dev no constructor in upgradable contracts. Instead we have initializers
+    function initialize() public initializer {
+        ///@dev as there is no constructor, we need to initialise the OwnableUpgradeable explicitly
+        ///@dev sets owner of contract to deployer
+       __Ownable_init();
+       __UUPSUpgradeable_init();
+    }
+
+    ///@dev Required by the OZ UUPS module
+   function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
     
 
     modifier onlyAuthorizedKeys(address didIdentifier) {

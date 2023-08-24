@@ -1,11 +1,56 @@
 pragma solidity ^0.8.19;
 
+import "forge-std/Test.sol";
+import "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {DIDRegistry} from "../src/DidRegistry.sol";
 import { DidRegistryTest } from "./DidRegistryTest.sol";
 
-contract DidRegistryBaseTest is DidRegistryTest {
+contract DIDRegistryTest is Test {
 
-    //////// Test for did creation and resolution//////////
+    DIDRegistry public didRegistry;
+    ERC1967Proxy private proxy;
+    DIDRegistry public wrappedProxy;
+
+    function setUp() public {
+        didRegistry = new DIDRegistry();
+        proxy = new ERC1967Proxy(address(didRegistry),"");
+        wrappedProxy = DIDRegistry(address(proxy));
+    }
+
+
+    function test_should_initialize_proxy_implementation() public {
+        wrappedProxy.initialize();
+        assertEq(wrappedProxy.owner(), address(this));
+    }
+
+    function test_should_upgrade_proxy_implementation() public {
+        // Initialize proxy and add some data
+        wrappedProxy.initialize();
+
+        address user = vm.addr(1);
+        wrappedProxy.initializeDidState(user);
+
+
+        assertEq(wrappedProxy.isGenerativeDidState(user), false);
+
+        // Create new implementation and upgrade proxy
+        DIDRegistry upgradedRegistry = new DIDRegistry();
+
+        wrappedProxy.upgradeTo(address(upgradedRegistry));
+
+        // The initializedDid should still be non-generative after the upgrade
+        assertEq(wrappedProxy.isGenerativeDidState(user), false);
+    }
+
+    function test_should_transfer_contract_ownership_to_new_admin() public {
+        address newOwner = vm.addr(1);
+        wrappedProxy.initialize();
+
+        wrappedProxy.transferOwnership(newOwner);
+        assertEq(wrappedProxy.owner(), newOwner);
+    }
+    
+
     function test_fuzz_should_resolve_did_state(address user) public {
         vm.assume(user > address(0));
 
@@ -30,6 +75,22 @@ contract DidRegistryBaseTest is DidRegistryTest {
         didRegistry.initializeDidState(user);
 
         assertEq(didRegistry.isGenerativeDidState(user), false);
+    }
+
+    function test_should_revert_when_trying_to_initialize_proxy_implementation_twice() public {
+        wrappedProxy.initialize();
+        vm.expectRevert("Initializable: contract is already initialized");
+        wrappedProxy.initialize();
+    }
+
+    function test_should_revert_when_nonOwner_tries_to_upgrade_proxy_implementation() public {
+        wrappedProxy.initialize();
+
+        address user = vm.addr(1);
+
+        vm.startPrank(user);
+        vm.expectRevert("Ownable: caller is not the owner");
+        wrappedProxy.transferOwnership(user);
     }
 
     function test_revert_should_fail_to_initialize_didState_that_exist() public {
