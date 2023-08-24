@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "generate-contract-types": "typechain --target=ethers-v6 ./abi/DIDRegistry.json",
-    "deploy-tenderly-devnet": "forge create --rpc-url=https://rpc.vnet.tenderly.co/devnet/bnb-testnet/aae7fb27-45ab-4e7c-8f20-a030843ef46d DIDRegistry --unlocked --from 0x2797eCe630BABc6dB50B332eB9d85C934e71085A"
+    "spawn-devnet": "tenderly devnet spawn-rpc --project project --template bnb-testnet"
   },
   "dependencies": {
     "dotenv": "^16.3.1",

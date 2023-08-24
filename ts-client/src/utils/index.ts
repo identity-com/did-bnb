@@ -17,6 +17,10 @@ export const fetchDidRegistryContractInstance = (didRegistryAddress: string, sig
     return DIDRegistry__factory.connect(didRegistryAddress, wallet.provider);
 }
 
+export const fetchReadOnlyDidRegistryContractInstance = (didRegistryAddress: string): DIDRegistry => {
+    return DIDRegistry__factory.connect(didRegistryAddress, fetchRpcProvider());
+}
+
 export const deployDidRegistryContractInstance = async (signer: string): Promise<DIDRegistry & { deploymentTransaction(): ethers.ContractTransactionResponse}> => {
     const wallet = fetchRpcWallet(signer);
     const result = await new DIDRegistry__factory(wallet).deploy({gasLimit: 4000000});

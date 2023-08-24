@@ -29,7 +29,16 @@ describe('TS-client Integration test', () => {
 
         const isGenerative: boolean = await didRegistryContract.isGenerativeDidState(FOUNDRY_DEFAULT_PUBLIC_KEY_ONE,{gasLimit: 30000000});
         expect(isGenerative).toBe(false);
-    }, 10000)
+    }, 15000)
+
+    test('should create verification method on chain', async () => {
+
+        const vmTx = await didRegistryContract.addVerificationMethod(FOUNDRY_DEFAULT_PUBLIC_KEY_ONE, {fragment: "test", flags: 0, methodType: 0, keyData: FOUNDRY_DEFAULT_PUBLIC_KEY_ONE}, {gasLimit: 30000000});
+        await vmTx.wait();
+
+        const didState = await didRegistryContract.resolveDidState(FOUNDRY_DEFAULT_PUBLIC_KEY_ONE, {gasLimit: 30000000})
+        expect(didState.verificationMethods.length).toBe(2);
+    }, 15000)
 
     const addBalanceToTenderlyAccount = async (address: string, privateKey: string): Promise<void> => {
         const signedWallet = fetchRpcWallet(privateKey);
