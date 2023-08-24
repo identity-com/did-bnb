@@ -1,18 +1,11 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "forge-std/Test.sol";
 import {DIDRegistry} from "../src/DidRegistry.sol";
+import { DidRegistryTest } from "./DidRegistryTest.sol";
 
-contract CounterTest is Test {
+contract DidRegistryBaseTest is DidRegistryTest {
 
-    DIDRegistry public didRegistry;
-
-    function setUp() public {
-        didRegistry = new DIDRegistry();
-    }
-
-
+    //////// Test for did creation and resolution//////////
     function test_fuzz_should_resolve_did_state(address user) public {
         vm.assume(user > address(0));
 
@@ -21,7 +14,7 @@ contract CounterTest is Test {
         //Default the didState should be Invocation and have an ownership proof
         assertEq(
             defaultState.verificationMethods[0].flags, 
-            uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION)
+            uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.OWNERSHIP_PROOF) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION) | uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.PROTECTED)
         );
         assertEq(defaultState.verificationMethods[0].fragment,"default");
         
@@ -39,12 +32,13 @@ contract CounterTest is Test {
         assertEq(didRegistry.isGenerativeDidState(user), false);
     }
 
-    function testFail_should_fail_to_initialize_did_that_exist() public {
+    function test_revert_should_fail_to_initialize_didState_that_exist() public {
         address user = vm.addr(3);
 
         // Initialize
         didRegistry.initializeDidState(user);
         // Try to initialize an existing didState
+        vm.expectRevert("Did state already exist");
         didRegistry.initializeDidState(user);
     }
 }
