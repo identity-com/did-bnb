@@ -1,7 +1,7 @@
 import { ContractTransactionResponse, HDNodeWallet, JsonRpcProvider, Wallet, ethers } from "ethers"
 import 'dotenv/config';
-import { deployDidRegistryContractInstance, fetchRpcWallet } from "../../src/utils";
-import { setAccountBalance } from "./util";
+import { fetchRpcWallet } from "../../src/utils";
+import { setAccountBalance, deployDidRegistryContractInstance } from "./util";
 import { DIDRegistry } from "../../types/ethers-contracts";
 
 const FOUNDRY_DEFAULT_PRIVATE_KEY_ONE = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
