@@ -1,19 +1,19 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
-import "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {DIDRegistry} from "../src/DidRegistry.sol";
+import { TestProxy } from "./TestProxy.sol";
 import { DidRegistryTest } from "./DidRegistryTest.sol";
 
 contract DIDRegistryTest is Test {
 
     DIDRegistry public didRegistry;
-    ERC1967Proxy private proxy;
+    TestProxy private proxy;
     DIDRegistry public wrappedProxy;
 
     function setUp() public {
         didRegistry = new DIDRegistry();
-        proxy = new ERC1967Proxy(address(didRegistry),"");
+        proxy = new TestProxy(address(didRegistry),"");
         wrappedProxy = DIDRegistry(address(proxy));
     }
 
