@@ -12,8 +12,8 @@ export const fetchRpcWallet = (signerKey: string): Wallet => {
     return new ethers.Wallet(signerKey, provider);
 }
 
-export const fetchDidRegistryContractInstance = (didRegistryAddress: string, signer: string): DIDRegistry => {
-    const wallet = fetchRpcWallet(signer);
+export const fetchDidRegistryContractInstance = (didRegistryAddress: string, privateKey: string): DIDRegistry => {
+    const wallet = fetchRpcWallet(privateKey);
     return DIDRegistry__factory.connect(didRegistryAddress, wallet.provider);
 }
 
