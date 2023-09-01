@@ -1,11 +1,26 @@
 import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-foundry";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-preprocessor";
 import fs from "fs";
 
+function getRemappings() {
+  return fs
+    .readFileSync("remappings.txt", "utf8")
+    .split("\n")
+    .filter(Boolean) // remove empty lines
+    .map((line) => line.trim().split("="));
+}
+
 const config: HardhatUserConfig = {
-  solidity: "0.8.19",
+  solidity: {
+    version: "0.8.19",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
   defender: {
     apiKey: process.env.DEFENDER_KEY!,
     apiSecret: process.env.DEFENDER_SECRET!,
@@ -14,12 +29,11 @@ const config: HardhatUserConfig = {
     eachLine: (hre) => ({
       transform: (line: string) => {
         if (line.match(/^\s*import /i)) {
-          for (const [from, to] of getRemappings()) {
-            if (line.includes(from)) {
-              line = line.replace(from, to);
-              break;
+          getRemappings().forEach(([find, replace]) => {
+            if (line.match(find)) {
+              line = line.replace(find, replace);
             }
-          }
+          });
         }
         return line;
       },
@@ -31,12 +45,5 @@ const config: HardhatUserConfig = {
   },
 };
 
-function getRemappings() {
-  return fs
-    .readFileSync("remappings.txt", "utf8")
-    .split("\n")
-    .filter(Boolean) // remove empty lines
-    .map((line) => line.trim().split("="));
-}
 
 export default config;
