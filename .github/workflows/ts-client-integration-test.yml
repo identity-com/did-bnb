@@ -2,6 +2,9 @@ on: [push]
 
 name: ts-client-integration-test
 
+env:
+  RPC_URL: http://127.0.0.1:8545
+
 jobs:
   check:
     name: Ts-client integration test
