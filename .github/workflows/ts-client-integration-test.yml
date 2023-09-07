@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Dev Dependencies
         working-directory: ./ts-client
-        uses: npm install
+        run: npm install
 
       - name: Run Anvil Node
         uses: anvil
