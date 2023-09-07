@@ -1,0 +1,31 @@
+on: [push]
+
+name: test
+
+jobs:
+  check:
+    name: Foundry project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      
+      - name: Set Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+
+      - name: Install Dev Dependencies
+        working-directory: ./ts-client
+        uses: npm install
+
+      - name: Run Anvil Node
+        uses: anvil
+
+      - name: Run tests
+        working-directory: ./ts-client
+        run: npm run integration-test

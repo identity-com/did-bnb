@@ -5,7 +5,8 @@
     "license": "MIT",
     "scripts": {
       "generate-contract-types": "typechain --target=ethers-v6 ./abi/DIDRegistry.json",
-      "spawn-devnet": "tenderly devnet spawn-rpc --project project --template bnb-testnet"
+      "spawn-devnet": "tenderly devnet spawn-rpc --project project --template bnb-testnet",
+      "integration-test": "jest"
     },
     "dependencies": {
       "dotenv": "^16.3.1",
