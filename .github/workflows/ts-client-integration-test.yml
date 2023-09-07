@@ -24,7 +24,7 @@ jobs:
         run: npm install
 
       - name: Run Anvil Node
-        uses: anvil
+        run: anvil
 
       - name: Run tests
         working-directory: ./ts-client
