@@ -1,10 +1,10 @@
 on: [push]
 
-name: test
+name: ts-client-integration-test
 
 jobs:
   check:
-    name: Foundry project
+    name: Ts-client integration test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
