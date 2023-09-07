@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: true
 
-    name: Foundry project
+    name: Contract Unit Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -24,8 +24,8 @@ jobs:
 
       - name: Install Forge Dependencies
         run: |
-          forge install openzeppelin-contracts-upgradeable=OpenZeppelin/openzeppelin-contracts-upgradeable@v4.9.0 --no-commit
-        id: install dependency contracts
+          forge install openzeppelin-contracts-upgradeable=OpenZeppelin/openzeppelin-contracts-upgradeable --no-commit
+        id: install-dependency-contracts
 
       - name: Run Forge build
         run: |
