@@ -1,7 +1,10 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@openzeppelin/hardhat-upgrades";
+import "@nomicfoundation/hardhat-verify";
 import "hardhat-preprocessor";
 import fs from "fs";
+
+// Preprocessor logic is directly from foundry docs: https://book.getfoundry.sh/config/hardhat
 
 function getRemappings() {
   return fs
@@ -21,9 +24,14 @@ const config: HardhatUserConfig = {
       },
     },
   },
-  defender: {
-    apiKey: process.env.DEFENDER_KEY!,
-    apiSecret: process.env.DEFENDER_SECRET!,
+  networks: {
+    testnetBnb: {
+      url: process.env.BNB_TESTNET_RPC_URL!,
+      accounts: [process.env.BNB_TESTNET_PK!]
+    }
+  },
+  etherscan: {
+    apiKey: process.env.EXPLORER_API_KEY!
   },
   preprocess: {
     eachLine: (hre) => ({

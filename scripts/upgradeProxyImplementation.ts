@@ -1,10 +1,10 @@
-import { ethers, defender } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 
 async function main() {
   const didRegistryContract = await ethers.getContractFactory("DIDRegistry");
-  const deployment = await defender.upgradeProxy(process.env.DID_REGISTRY_PROXY_ADDRESS!, didRegistryContract);
-
-  console.log(`DidRegistry upgraded`);
+  const deployment = await upgrades.upgradeProxy(process.env.DID_REGISTRY_PROXY_ADDRESS!, didRegistryContract);
+  await deployment.waitForDeployment();
+  console.log(`DidRegistry upgraded to: `, await deployment.getAddress());
 }
 
 
