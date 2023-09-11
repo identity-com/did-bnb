@@ -28,6 +28,9 @@ const config: HardhatUserConfig = {
     testnetBnb: {
       url: process.env.BNB_TESTNET_RPC_URL!,
       accounts: [process.env.BNB_TESTNET_PK!]
+    },
+    bnbSmartChain: {
+      url: process.env.BNB_RPC_URL!,
     }
   },
   etherscan: {

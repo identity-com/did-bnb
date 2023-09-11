@@ -5,8 +5,10 @@
   "repository": "git@github.com:identity-com/did-bnb.git",
   "license": "MIT",
   "scripts": {
-    "deploy-and-verify-contract": "npx hardhat verify --network $(npx hardhat run --network testnetBnb scripts/deployProxy.ts)",
-    "upgrade-and-verify-contract": "npx hardhat verify --network $(npx hardhat run --network testnetBnb scripts/upgradeProxyImplementation.ts)"
+    "testnet-deploy-and-verify-contract": "npx hardhat verify --network $(npx hardhat run --network testnetBnb scripts/deployProxy.ts)",
+    "testnet-upgrade-and-verify-contract": "npx hardhat verify --network $(npx hardhat run --network testnetBnb scripts/upgradeProxyImplementation.ts)",
+    "mainnet-deploy-and-verify-contract": "npx hardhat verify --network $(npx hardhat run --network bnbSmartChain scripts/deployProxy.ts)",
+    "mainnet-upgrade-and-verify-contract": "npx hardhat verify --network $(npx hardhat run --network bnbSmartChain scripts/upgradeProxyImplementation.ts)"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.4",
