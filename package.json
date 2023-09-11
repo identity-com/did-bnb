@@ -4,6 +4,10 @@
   "main": "index.js",
   "repository": "git@github.com:identity-com/did-bnb.git",
   "license": "MIT",
+  "scripts": {
+    "deploy-and-verify-contract": "npx hardhat verify --network $(npx hardhat run --network testnetBnb scripts/deployProxy.ts)",
+    "upgrade-and-verify-contract": "npx hardhat verify --network $(npx hardhat run --network testnetBnb scripts/upgradeProxyImplementation.ts)"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.4",
     "@nomicfoundation/hardhat-foundry": "^1.1.1",

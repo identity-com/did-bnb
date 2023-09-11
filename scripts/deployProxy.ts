@@ -5,7 +5,7 @@ async function main() {
   const deployment = await upgrades.deployProxy(didRegistryProxyContract, []);
   await deployment.waitForDeployment();
 
-  console.log(`DidRegistry admin deployed at address: ${await deployment.getAddress()}`);
+  console.log(`${await deployment.getAddress()}`);
 }
 
 

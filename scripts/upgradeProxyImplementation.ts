@@ -4,7 +4,7 @@ async function main() {
   const didRegistryContract = await ethers.getContractFactory("DIDRegistry");
   const deployment = await upgrades.upgradeProxy(process.env.DID_REGISTRY_PROXY_ADDRESS!, didRegistryContract);
   await deployment.waitForDeployment();
-  console.log(`DidRegistry upgraded to: `, await deployment.getAddress());
+  console.log(await deployment.getAddress());
 }
 
 
