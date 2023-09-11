@@ -1,0 +1,34 @@
+on: [push]
+
+name: ts-client-integration-test
+
+env:
+  RPC_URL: http://127.0.0.1:8545
+
+jobs:
+  check:
+    name: Ts-client integration test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      
+      - name: Set Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+
+      - name: Install Dev Dependencies
+        working-directory: ./ts-client
+        run: npm install
+
+      - name: Run Anvil Node
+        run: anvil &
+
+      - name: Run tests
+        working-directory: ./ts-client
+        run: npm run integration-test
