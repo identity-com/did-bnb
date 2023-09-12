@@ -11,6 +11,14 @@ async function main() {
     kind: 'uups',
     redeployImplementation: 'always'
   });
+
+  // Need to wait for block with contract to be produced and all events to fire before verifying
+  console.log("waiting...");
+
+  await sleep(7000);
+
+  const newImplementationAddress = await proposalResponse.metadata?.newImplementationAddress!;
+  await verify(newImplementationAddress,[]);
 }
 
 
