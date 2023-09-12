@@ -1,8 +1,11 @@
 import { HardhatUserConfig } from "hardhat/config";
+import { config as dotEnvConfig } from "dotenv";
 import "@openzeppelin/hardhat-upgrades";
 import "@nomicfoundation/hardhat-verify";
 import "hardhat-preprocessor";
 import fs from "fs";
+
+dotEnvConfig();
 
 // Preprocessor logic is directly from foundry docs: https://book.getfoundry.sh/config/hardhat
 
@@ -23,6 +26,10 @@ const config: HardhatUserConfig = {
         runs: 200,
       },
     },
+  },
+  defender: {
+    apiKey: process.env.DEFENDER_KEY!,
+    apiSecret: process.env.DEFENDER_SECRET!
   },
   networks: {
     testnetBnb: {
