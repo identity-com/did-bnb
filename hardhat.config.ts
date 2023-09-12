@@ -34,10 +34,15 @@ const config: HardhatUserConfig = {
   networks: {
     testnetBnb: {
       url: process.env.BNB_TESTNET_RPC_URL!,
+      chainId: 97
+    },
+    opBnb: {
+      url: "https://opbnb-testnet-rpc.bnbchain.org",
       accounts: [process.env.BNB_TESTNET_PK!]
     },
     bnbSmartChain: {
       url: process.env.BNB_RPC_URL!,
+      chainId: 56,
     }
   },
   etherscan: {
