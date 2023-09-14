@@ -1,4 +1,4 @@
-name: bnb-testnet-deployment
+name: bnb-testnet-upgrade-deployment
 
 on:
     push:
@@ -55,5 +55,5 @@ jobs:
         id: install-hardhat-dependencies
 
       - name: Run deployment script
-        run: npm run testnet-deploy-and-verify-contract
-        id: deploy-and-verify
+        run: npm run testnet-upgrade-and-verify-contract
+        id: upgrade-and-verify

@@ -1,15 +1,13 @@
-name: bnb-testnet-deployment
+name: bnb-main-deployment-upgrade
 
 on:
-    push:
-      branches:
-        - main
+    workflow_dispatch:
 
 env:
     DEFENDER_KEY: ${{ secrets.DEFENDER_KEY }}
     DEFENDER_SECRET: ${{ secrets.DEFENDER_SECRET }}
-    DEFENDER_RELAY_KEY: ${{ secrets.DEFENDER_BNB_TESTNET_RELAY_KEY }}
-    DEFENDER_RELAY_SECRET: ${{ secrets.DEFENDER_BNB_TESTNET_RELAY_SECRET }}
+    DEFENDER_RELAY_KEY: ${{ secrets.DEFENDER_BNB_RELAY_KEY }}
+    DEFENDER_RELAY_SECRET: ${{ secrets.DEFENDER_BNB_RELAY_SECRET }}
     EXPLORER_API_KEY: ${{ secrets.BNB_EXPLORER_API_KEY }}
     DID_REGISTRY_PROXY_ADDRESS: ${{ secrets.DID_REGISTRY_PROXY_ADDRESS }}
     GNOSIS_ADDRESS: ${{ secrets.GNOSIS_ADDRESS }}
@@ -55,5 +53,5 @@ jobs:
         id: install-hardhat-dependencies
 
       - name: Run deployment script
-        run: npm run testnet-deploy-and-verify-contract
-        id: deploy-and-verify
+        run: npm run mainnet-upgrade-and-verify-contract
+        id: upgrade-and-verify
