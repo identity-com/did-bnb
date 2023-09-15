@@ -16,7 +16,7 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
-      
+
       - name: Set Node.js 16.x
         uses: actions/setup-node@v3
         with:
@@ -24,11 +24,11 @@ jobs:
 
       - name: Install Dev Dependencies
         working-directory: ./ts-client
-        run: npm install
+        run: yarn install --frozen-lockfile
 
       - name: Run Anvil Node
         run: anvil &
 
       - name: Run tests
         working-directory: ./ts-client
-        run: npm run integration-test
+        run: yarn run test:integration
