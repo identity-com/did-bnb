@@ -11,8 +11,9 @@ node_modules/
 /broadcast/**/dry-run/
 
 # ts-client files
-ts-client/node_modules
-ts-client/types
+ts-client/dist/
+ts-client/node_modules/
+ts-client/src/contracts/typechain-types/
 ts-client/yarn.lock
 # Dotenv file
 .env
