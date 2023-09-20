@@ -1,0 +1,57 @@
+name: bnb-main-deployment-upgrade
+
+on:
+    workflow_dispatch:
+
+env:
+    DEFENDER_KEY: ${{ secrets.DEFENDER_KEY }}
+    DEFENDER_SECRET: ${{ secrets.DEFENDER_SECRET }}
+    DEFENDER_RELAY_KEY: ${{ secrets.DEFENDER_BNB_RELAY_KEY }}
+    DEFENDER_RELAY_SECRET: ${{ secrets.DEFENDER_BNB_RELAY_SECRET }}
+    EXPLORER_API_KEY: ${{ secrets.BNB_EXPLORER_API_KEY }}
+    DID_REGISTRY_PROXY_ADDRESS: ${{ secrets.DID_REGISTRY_PROXY_ADDRESS }}
+    GNOSIS_ADDRESS: ${{ secrets.GNOSIS_ADDRESS }}
+    BNB_TESTNET_RPC_URL: ${{ secrets.BNB_TESTNET_RPC_URL }}
+    BNB_RPC_URL: ${{ secrets.BNB_RPC_URL }}
+
+jobs:
+  check:
+    strategy:
+      fail-fast: true
+
+    name: Bnb testnet deployment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install Forge Dependencies
+        run: |
+          forge install openzeppelin-contracts-upgradeable=OpenZeppelin/openzeppelin-contracts-upgradeable --no-commit
+        id: install-dependency-contracts
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes
+        id: build
+
+      - name: Set Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+
+      - name: Install hardhat dependencies
+        run: |
+          npm install
+        id: install-hardhat-dependencies
+
+      - name: Run deployment script
+        run: npm run mainnet-upgrade-and-verify-contract
+        id: upgrade-and-verify

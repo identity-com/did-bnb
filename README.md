@@ -175,7 +175,7 @@ Event Emitted: `ControllerRemoved`
 
 ## Deployments
 
-- Testnet: [0x75837371D170Bb8E5b74A968aDe00eDeaf59AD56](https://testnet.bscscan.com/address/0x75837371d170bb8e5b74a968ade00edeaf59ad56#code)
+- Testnet: [0x88a05b4370BbB90c9F3EEa72A65c77131a7bc18d](https://testnet.bscscan.com/address/0x88a05b4370BbB90c9F3EEa72A65c77131a7bc18d)
 
 
 ## Developer Notes
@@ -188,3 +188,28 @@ This project uses foundry for writing test. You can run the unit test suite by r
 To run the test and get a test coverage report you can run:
 
 `forge coverage`
+
+
+### Contract deployment
+This project uses hardhat scripts in combination with [Openzeppelin defender](https://www.openzeppelin.com/defender) and a multi-sig wallet (both on testnet and mainnet) for contract deployments. All deployment transactions occur through a [relayer](https://docs.openzeppelin.com/defender/v2/manage/relayers) and once deployed ownership of all contracts is transferred to the multi-sig wallet that is also managed in Defender.
+
+#### Bnb testnet
+Deployments are automatically triggered on every merge to the `main` branch via a github action and can also be run manually. Before deployments please ensure the relayer has enough testnet BNB. You can get more testnet bnb at [this faucet](https://testnet.bnbchain.org/faucet-smart).
+
+- Relayer address: [0x8785567484518943B3eeB59882Ab9199994d04bF](https://testnet.bscscan.com/address/0x8785567484518943B3eeB59882Ab9199994d04bF)
+
+- DidRegistry proxy address: 0x88a05b4370BbB90c9F3EEa72A65c77131a7bc18d
+
+#### Bnb testnet
+Deployments are automatically triggered on every merge to the `main` branch via a github action and can also be run manually. Before deployments please ensure the relayer has enough testnet BNB. You can get more testnet bnb at [this faucet](https://testnet.bnbchain.org/faucet-smart).
+
+- Relayer address: [0x8785567484518943B3eeB59882Ab9199994d04bF](https://testnet.bscscan.com/address/0x8785567484518943B3eeB59882Ab9199994d04bF)
+
+- DidRegistry proxy address: 0x88a05b4370BbB90c9F3EEa72A65c77131a7bc18d
+
+#### Bnb mainnet
+Deployments are manually triggered via a github action. Before deployments please ensure the relayer has enough BNB. 
+
+- Relayer address: TBD
+
+- DidRegistry proxy address: TBD
