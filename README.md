@@ -193,12 +193,7 @@ To run the test and get a test coverage report you can run:
 ### Contract deployment
 This project uses hardhat scripts in combination with [Openzeppelin defender](https://www.openzeppelin.com/defender) and a multi-sig wallet (both on testnet and mainnet) for contract deployments. All deployment transactions occur through a [relayer](https://docs.openzeppelin.com/defender/v2/manage/relayers) and once deployed ownership of all contracts is transferred to the multi-sig wallet that is also managed in Defender.
 
-#### Bnb testnet
-Deployments are automatically triggered on every merge to the `main` branch via a github action and can also be run manually. Before deployments please ensure the relayer has enough testnet BNB. You can get more testnet bnb at [this faucet](https://testnet.bnbchain.org/faucet-smart).
-
-- Relayer address: [0x8785567484518943B3eeB59882Ab9199994d04bF](https://testnet.bscscan.com/address/0x8785567484518943B3eeB59882Ab9199994d04bF)
-
-- DidRegistry proxy address: 0x88a05b4370BbB90c9F3EEa72A65c77131a7bc18d
+This project also uses BnB's explorer api key to verify contracts.
 
 #### Bnb testnet
 Deployments are automatically triggered on every merge to the `main` branch via a github action and can also be run manually. Before deployments please ensure the relayer has enough testnet BNB. You can get more testnet bnb at [this faucet](https://testnet.bnbchain.org/faucet-smart).
@@ -213,3 +208,20 @@ Deployments are manually triggered via a github action. Before deployments pleas
 - Relayer address: TBD
 
 - DidRegistry proxy address: TBD
+
+
+#### Local deployment
+To deploy locally you must have the following enviornment variables in your `.env` file:
+
+- `DEFENDER_KEY` and `DEFENDER_SECRET`
+- `DEFENDER_RELAY_KEY` and `DEFENDER_RELAY_SECRET`
+
+- `EXPLORER_API_KEY`: Needed for contract source code verification
+
+- `DID_REGISTRY_PROXY_ADDRESS`: Target address for upgrades and ownership changes
+- `GNOSIS_ADDRESS`: Multi-sig wallet address that will become owner of deployed contracts
+
+- `BNB_TESTNET_RPC_URL`: Needed for bnb testnet deployments
+- `BNB_RPC_URL`: Needed for bnb mainnet deployments
+
+Once these are configured you can run any of the deployment/upgrade scripts inside the `package.json` scripts.
