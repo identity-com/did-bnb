@@ -1,9 +1,7 @@
 name: bnb-testnet-deployment
 
 on:
-    push:
-      branches:
-        - main
+  workflow_dispatch:
 
 env:
     DEFENDER_KEY: ${{ secrets.DEFENDER_KEY }}
@@ -11,13 +9,13 @@ env:
     DEFENDER_RELAY_KEY: ${{ secrets.DEFENDER_BNB_TESTNET_RELAY_KEY }}
     DEFENDER_RELAY_SECRET: ${{ secrets.DEFENDER_BNB_TESTNET_RELAY_SECRET }}
     EXPLORER_API_KEY: ${{ secrets.BNB_EXPLORER_API_KEY }}
-    DID_REGISTRY_PROXY_ADDRESS: ${{ secrets.DID_REGISTRY_PROXY_ADDRESS }}
+    DID_REGISTRY_PROXY_ADDRESS: ${{ secrets.DID_REGISTRY_TESTNET_PROXY_ADDRESS }}
     GNOSIS_ADDRESS: ${{ secrets.GNOSIS_ADDRESS }}
     BNB_TESTNET_RPC_URL: ${{ secrets.BNB_TESTNET_RPC_URL }}
     BNB_RPC_URL: ${{ secrets.BNB_RPC_URL }}
 
 jobs:
-  check:
+  deploy-testnet:
     strategy:
       fail-fast: true
 
