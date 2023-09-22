@@ -5,6 +5,7 @@
   "repository": "git@github.com:identity-com/did-bnb.git",
   "license": "MIT",
   "scripts": {
+    "local-deployment": "npx hardhat run --network local scripts/deployLocally.ts",
     "testnet-deploy-and-verify-contract": "npx hardhat run --network testnetBnb scripts/deployProxy.ts",
     "testnet-upgrade-and-verify-contract": "npx hardhat run --network testnetBnb scripts/upgradeProxyImplementation.ts",
     "mainnet-deploy-and-verify-contract": "npx hardhat run --network bnbSmartChain scripts/deployProxy.ts",
