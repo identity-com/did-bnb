@@ -39,6 +39,9 @@ const config: HardhatUserConfig = {
     bnbSmartChain: {
       url: process.env.BNB_RPC_URL!,
       chainId: 56,
+    },
+    local: {
+      url: 'http://127.0.0.1:8545'
     }
   },
   etherscan: {

@@ -211,17 +211,4 @@ Deployments are manually triggered via a github action. Before deployments pleas
 
 
 #### Local deployment
-To deploy locally you must have the following enviornment variables in your `.env` file:
-
-- `DEFENDER_KEY` and `DEFENDER_SECRET`
-- `DEFENDER_RELAY_KEY` and `DEFENDER_RELAY_SECRET`
-
-- `EXPLORER_API_KEY`: Needed for contract source code verification
-
-- `DID_REGISTRY_PROXY_ADDRESS`: Target address for upgrades and ownership changes
-- `GNOSIS_ADDRESS`: Multi-sig wallet address that will become owner of deployed contracts
-
-- `BNB_TESTNET_RPC_URL`: Needed for bnb testnet deployments
-- `BNB_RPC_URL`: Needed for bnb mainnet deployments
-
-Once these are configured you can run any of the deployment/upgrade scripts inside the `package.json` scripts.
+To deploy locally you first start the anvil node by running `anvil`, then you can run the local deployment script `npm run local-deployment` or `yarn local-deployment`
