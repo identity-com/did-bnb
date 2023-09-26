@@ -39,8 +39,8 @@ Create a service for a `did:bnb` by using the following code snippet:
 ```typescript
 const address = "0x88a05b4370BbB90c9F3EEa72A65c77131a7bc18d";
 const provider = getDefaultProvider(process.env.RPC_URL); // e.g. https://bsc-testnet.publicnode.com	
-const chainEnv: ChainEnviroment = 'tesnet';
-const didRegistry = new DidRegistry(provider, address, {chainEnvironment: 'localnet'});
+const chainEnv: ChainEnviroment = 'testnet';
+const didRegistry = new DidRegistry(provider, address, {chainEnvironment: chainEnv});
 // ... use didRegistry client
 const randomDid = DidIdentifier.create(
   Wallet.createRandom().address,
@@ -60,8 +60,8 @@ didRegistry.resolve(randomDid)
     const address = "0x88a05b4370BbB90c9F3EEa72A65c77131a7bc18d";
     const provider = getDefaultProvider(process.env.RPC_URL); // e.g. https://bsc-testnet.publicnode.com	
     const randomWallet = Wallet.createRandom().connect(provider);
-    const chainEnv: ChainEnviroment = 'tesnet';
-    const didRegistry = new DidRegistry(randomWallet, address, {chainEnvironment: 'localnet'});
+    const chainEnv: ChainEnviroment = 'testnet';
+    const didRegistry = new DidRegistry(randomWallet, address, {chainEnvironment: chainEnv});
     // ... use didRegistry client
     // not passing a DID will resolve the DID of the wallet address
     didRegistry.resolve()
@@ -157,7 +157,7 @@ that specific VM).
 
 ### Add External Controller (non-did:bnb DID)
 ```typescript
-  const externalController = `did:ethr:${Wallet.createRandom().address}`;
+  const externalController = `did:sol:testZ3V3Sr5rwjY8573coZnvEKWCifNtnhXedW5YR6m`;
 
    const tx: ContractTransaction = await didRegistry
            .addExternalController(externalController);
