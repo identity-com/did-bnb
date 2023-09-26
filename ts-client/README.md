@@ -157,7 +157,7 @@ that specific VM).
 
 ### Add External Controller (non-did:bnb DID)
 ```typescript
-  const externalController = `did:sol:${Wallet.createRandom().address}`;
+  const externalController = `did:sol:testZ3V3Sr5rwjY8573coZnvEKWCifNtnhXedW5YR6m`;
 
    const tx: ContractTransaction = await didRegistry
            .addExternalController(externalController);
