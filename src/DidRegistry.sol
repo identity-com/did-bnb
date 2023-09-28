@@ -15,13 +15,22 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     // Each flag is represented by a specific bit. This enum specifies what flag corresponds to which bit.
     enum VerificationMethodFlagBitMask {
+        /// The VM can be used for encryption
         KEY_AGREEMENT, // bit 0
+        /// The VM is able to authenticate the subject
         AUTHENTICATION, // bit 1
+        /// The VM is able to proof assertions on the subject
         ASSERTION, // bit 2
+        /// The VM can be used for issuing capabilities. Required for DID Update
         CAPABILITY_INVOCATION, // bit 3
+        /// The VM can be used for delegating capabilities.
         CAPABILITY_DELEGATION, // bit 4
+        /// The subject did proof to be in possession of the private key
         OWNERSHIP_PROOF, // bit 5
-        PROTECTED // bit 6
+        /// The Verification Method is marked as protected. This means it cannot be removed
+        PROTECTED, // bit 6
+        /// The VM is hidden from the DID Document (off-chain only)
+        DID_DOC_HIDDEN //bit 7
     }
 
     struct VerificationMethod {

@@ -157,7 +157,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         didRegistry.initializeDidState(user);
 
         vm.expectRevert("Cannot remove last authority verification method");
-        didRegistry.updateVerificationMethodFlags(user, 'default', uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.ASSERTION)));
+        didRegistry.updateVerificationMethodFlags(user, 'default', uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.DID_DOC_HIDDEN)));
     }
 
     function test__revert_should_not_allow_adding_unknown_flag_to_verification_method() public {
