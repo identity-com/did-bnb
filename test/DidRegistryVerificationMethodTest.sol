@@ -157,8 +157,26 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         didRegistry.initializeDidState(user);
 
         vm.expectRevert("Cannot remove last authority verification method");
-        didRegistry.updateVerificationMethodFlags(user, 'default', uint16(0));
+        didRegistry.updateVerificationMethodFlags(user, 'default', uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.ASSERTION)));
     }
+
+    function test__revert_should_not_allow_adding_unknown_flag_to_verification_method() public {
+        address user = vm.addr(1);
+
+        vm.startPrank(user); // Send transaction as the user
+
+        didRegistry.initializeDidState(user);
+        DIDRegistry.DidState memory didState = didRegistry.resolveDidState(user);
+        
+        DIDRegistry.VerificationMethod memory defaultVerificationMethod = didState.verificationMethods[0];
+
+        // Add none supported flag
+        uint16 newFlags = defaultVerificationMethod.flags & uint16(uint16(1) << uint16(type(DIDRegistry.VerificationMethodFlagBitMask).max) + 1);
+
+        vm.expectRevert("Attempted to add unsupported flag");
+        didRegistry.updateVerificationMethodFlags(user, defaultVerificationMethod.fragment, newFlags);
+    }
+
 
     function test_revert_only_authorized_key_can_remove_ownership_proof_flag_on_verification_method() public {
         address userOne = vm.addr(1);

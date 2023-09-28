@@ -146,6 +146,7 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     function updateVerificationMethodFlags(address didIdentifier, string calldata fragment, uint16 flags) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
         require(_doesFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
+        require(_isValidFlag(flags), "Attempted to add unsupported flag");
 
         DidState storage didState = didStates[didIdentifier];
 
@@ -346,5 +347,10 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     function _hasFlag(uint16 flags, VerificationMethodFlagBitMask flag) internal pure returns(bool) {
         return flags & uint16(uint16(1) << uint16(flag)) != 0;
+    }
+
+    function _isValidFlag(uint16 flags) internal pure returns(bool) {
+        // Shifts the input flag by the amount of flags avalible.
+        return uint16(type(VerificationMethodFlagBitMask).max) >> uint16(flags) == 0;
     }
 }
