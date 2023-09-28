@@ -203,7 +203,7 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
     }
 
     function addNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public {
-        require(!_doesNativeControllerExist(didIdentifier,controller), "Native controller already exist");
+        require(_doesNativeControllerExist(didIdentifier,controller) == -1, "Native controller already exist");
         didStates[didIdentifier].nativeControllers.push(controller);
         
         emit ControllerAdded(didIdentifier, abi.encodePacked(controller), true);
@@ -211,7 +211,8 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     function removeNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
         require(didIdentifier != controller, "Cannot remove default authority key");
-        require(_doesNativeControllerExist(didIdentifier,controller), "Native controller does not exist");
+        // If an index is returned the controller exits
+        require(_doesNativeControllerExist(didIdentifier,controller) >= 0, "Native controller does not exist");
 
         DidState storage didState = didStates[didIdentifier];
 
@@ -305,14 +306,15 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
         return false;
     }
 
-    function _doesNativeControllerExist(address didIdentifier, address controller) internal view returns(bool) {
+    function _doesNativeControllerExist(address didIdentifier, address controller) internal view returns(int index) {
         DidState storage didState = didStates[didIdentifier];
-        for(uint i=0; i < didState.nativeControllers.length; i++) {
+        for(uint32 i=0; i < didState.nativeControllers.length; i++) {
             if(didState.nativeControllers[i] == controller) {
-                return true;
+                // Return index if controller found
+                return int32(i);
             }
         }
-        return false;
+        return -1;
     }
 
     function _doesExternalControllerExist(address didIdentifier, string calldata controller) internal view returns(bool) {
