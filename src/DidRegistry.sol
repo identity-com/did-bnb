@@ -226,28 +226,26 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
     }
 
      function addExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public  {
-        require(!_doesExternalControllerExist(didIdentifier,controller), "External controller already exist");
+        require(_doesExternalControllerExist(didIdentifier,controller) == -1, "External controller already exist");
         didStates[didIdentifier].externalControllers.push(controller);
 
         emit ControllerAdded(didIdentifier, abi.encodePacked(controller), false);
     }
 
-    function removeExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
-        require(_doesExternalControllerExist(didIdentifier,controller), "External controller does not exist");
+    function removeExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public {
+        
+        // If an index is returned the controller exits
+        int index = _doesExternalControllerExist(didIdentifier,controller);
+        require(index >= 0, "External controller does not exist");
 
         DidState storage didState = didStates[didIdentifier];
 
-        for(uint i=0; i < didState.externalControllers.length; i++) {
-            if(_stringCompare(didState.externalControllers[i], controller)) {
-                // Remove native controller from array (not built into solidity so manipulating array to remove)
-                didState.externalControllers[i] = didState.externalControllers[didState.externalControllers.length - 1];
-                didState.externalControllers.pop();
 
-                emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), false);
-                return true;
-            }
-        }
-        return false;
+        // Remove native controller from array (not built into solidity so manipulating array to remove)
+        didState.externalControllers[uint(index)] = didState.externalControllers[didState.externalControllers.length - 1];
+        didState.externalControllers.pop();
+
+        emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), false);
     }
 
     function _isKeyAuthority(address didIdentifier, address authority) internal view returns(bool) {
@@ -313,14 +311,14 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
         return -1;
     }
 
-    function _doesExternalControllerExist(address didIdentifier, string calldata controller) internal view returns(bool) {
+    function _doesExternalControllerExist(address didIdentifier, string calldata controller) internal view returns(int index) {
         DidState storage didState = didStates[didIdentifier];
         for(uint i=0; i < didState.externalControllers.length; i++) {
             if(_stringCompare(didState.externalControllers[i], controller)) {
-                return true;
+                return int(i);
             }
         }
-        return false;
+        return -1;
     }
 
     function _hasAuthorityVerificationMethod(address didIdentifier) internal view returns(bool) {
