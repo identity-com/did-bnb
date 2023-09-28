@@ -209,24 +209,20 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
         emit ControllerAdded(didIdentifier, abi.encodePacked(controller), true);
     }
 
-    function removeNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+    function removeNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public  {
         require(didIdentifier != controller, "Cannot remove default authority key");
+
         // If an index is returned the controller exits
-        require(_doesNativeControllerExist(didIdentifier,controller) >= 0, "Native controller does not exist");
+        int index = _doesNativeControllerExist(didIdentifier,controller);
+        require(index >= 0, "Native controller does not exist");
 
         DidState storage didState = didStates[didIdentifier];
 
-        for(uint i=0; i < didState.nativeControllers.length; i++) {
-            if(didState.nativeControllers[i] == controller) {
-                // Remove native controller from array (not built into solidity so manipulating array to remove)
-                didState.nativeControllers[i] = didState.nativeControllers[didState.nativeControllers.length - 1];
-                didState.nativeControllers.pop();
+        // Remove native controller from array (not built into solidity so manipulating array to remove)
+        didState.nativeControllers[uint(index)] = didState.nativeControllers[didState.nativeControllers.length - 1];
+        didState.nativeControllers.pop();
 
-                emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), true);
-                return true;
-            }
-        }
-        return false;
+        emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), true);
     }
 
      function addExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public  {
