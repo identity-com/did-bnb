@@ -58,13 +58,13 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
     function test_authorized_user_should_remove_verification_method() public {
         address user = vm.addr(1);
-        address nonAuthorizedUser = vm.addr(2);
+        address authorizedUser = vm.addr(2);
 
         DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
             fragment: 'verification-new-1',
             flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION)),
             methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
-            keyData: abi.encodePacked(nonAuthorizedUser)
+            keyData: abi.encodePacked(authorizedUser)
         });
 
         vm.startPrank(user); // Send transaction as the authorized user
@@ -73,13 +73,49 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
 
         vm.stopPrank();
 
-        vm.startPrank(nonAuthorizedUser);
+        vm.startPrank(authorizedUser);
 
         didRegistry.removeVerificationMethod(user, newVm.fragment);
 
         DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(user);
 
         assertEq(finalState.verificationMethods.length,1);
+    }
+
+    function test_authorized_user_with_multiple_verification_methods_should_remove_verification_method() public {
+        address user = vm.addr(1);
+        address authorizedUser = vm.addr(2);
+
+        // Add authoried user to verification method with no capabilitiy invocation
+        DIDRegistry.VerificationMethod memory newVm = DIDRegistry.VerificationMethod({
+            fragment: 'verification-new-1',
+            flags: uint16(uint16(1) << uint16(0)),
+            methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(authorizedUser)
+        });
+
+        DIDRegistry.VerificationMethod memory newVm2 = DIDRegistry.VerificationMethod({
+            fragment: 'verification-new-2',
+            flags: uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.CAPABILITY_INVOCATION)),
+            methodType: DIDRegistry.VerificationMethodType.EcdsaSecp256k1RecoveryMethod,
+            keyData: abi.encodePacked(authorizedUser)
+        });
+
+        // Send transactions as the user to add vm's
+        vm.startPrank(user);
+
+        _attemptToAddVerificationMethod(user, newVm);
+        didRegistry.addVerificationMethod(user, newVm2);
+
+        vm.stopPrank();
+
+        vm.startPrank(authorizedUser);
+
+        didRegistry.removeVerificationMethod(user, newVm2.fragment);
+
+        DIDRegistry.DidState memory finalState = didRegistry.resolveDidState(user);
+
+        assertEq(finalState.verificationMethods.length, 2);
     }
 
     function test_should_update_verification_method_flags() public {
