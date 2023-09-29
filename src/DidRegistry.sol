@@ -260,7 +260,10 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
             // Iterate through verification methods looking for key
             if(address(bytes20(didState.verificationMethods[i].keyData)) == authority) {
                 // Does the key authority have permission to invoke
-                return _hasFlag(didState.verificationMethods[i].flags, VerificationMethodFlagBitMask.CAPABILITY_INVOCATION);
+                if ( _hasFlag(didState.verificationMethods[i].flags, VerificationMethodFlagBitMask.CAPABILITY_INVOCATION) )
+                {
+                    return true;
+                }
             }
         }
         return false;
