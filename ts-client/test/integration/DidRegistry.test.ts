@@ -53,15 +53,23 @@ describe('Native TS Client Integration Test', () => {
     const { address } = await deployDidRegistryContractInstance(deployerWallet);
 
     // Connect didWallet and otherDidWallet to didRegistryContract
-    didRegistry = new DidRegistry(didWallet, address, {chainEnvironment: 'localnet'});
-    otherDidRegistry = new DidRegistry(otherDidWallet, address, {chainEnvironment: 'localnet'});
+    didRegistry = new DidRegistry(didWallet, address, {
+      chainEnvironment: 'localnet',
+    });
+    otherDidRegistry = new DidRegistry(otherDidWallet, address, {
+      chainEnvironment: 'localnet',
+    });
     otherDidRegistry.setDidIdentifier(didWallet.address); // otherDidWallet is message sender, but DID is still from didWallet
-    unauthorizedDidRegistry = new DidRegistry(unauthorizedWallet, address, {chainEnvironment: 'localnet'});
+    unauthorizedDidRegistry = new DidRegistry(unauthorizedWallet, address, {
+      chainEnvironment: 'localnet',
+    });
     unauthorizedDidRegistry.setDidIdentifier(didWallet.address); // unauthorizedDidWallet is message sender, but DID is still from didWallet
   });
 
   it('should generate DIDs with the correct prefix', () => {
-    expect(didRegistry.getDid().toString()).to.be.a('string').and.satisfy((did: string) => did.startsWith('did:bnb:localnet:'));
+    expect(didRegistry.getDid().toString())
+      .to.be.a('string')
+      .and.satisfy((did: string) => did.startsWith('did:bnb:localnet:'));
   });
 
   it('should resolve an initial DID State of the didWallet', async () => {
@@ -231,6 +239,29 @@ describe('Native TS Client Integration Test', () => {
     expect(doc.capabilityInvocation?.[0]).to.not.equal(
       didWithFragment.toString()
     );
+  });
+
+  it('should hide verification methods in the did document if the related flag is set', async () => {
+    const currentVerificationMethods = await otherDidRegistry
+      .resolve()
+      .then((doc) => doc.verificationMethod);
+
+    const tx = await otherDidRegistry
+      .setVerificationMethodFlags(SECONDARY_KEY_ID, [
+        BitwiseVerificationMethodFlag.DidDocHidden,
+        BitwiseVerificationMethodFlag.CapabilityInvocation,
+      ])
+      .then((tx) => tx.wait());
+    expect(tx.status).to.equal(1);
+
+    const doc = await otherDidRegistry.resolve();
+    expect(doc.verificationMethod).to.have.lengthOf(
+      (currentVerificationMethods?.length || Number.NaN) - 1
+    );
+    // make sure the hidden verification method is not in the did document
+    expect(
+      doc.verificationMethod?.find((vm) => vm.id.endsWith(SECONDARY_KEY_ID))
+    ).to.be.undefined;
   });
 
   it('should not able set Ownership proof for a different key', async () => {

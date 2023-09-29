@@ -1,10 +1,6 @@
 import { Overrides } from 'ethers';
 
-import {
-  MappedWriteOperation,
-  Options,
-  ReadOnlyOperation,
-} from '../utils';
+import { MappedWriteOperation, Options, ReadOnlyOperation } from '../utils';
 import { omit } from 'ramda';
 import { DIDRegistry } from '../contracts/typechain-types';
 import { DidIdentifier } from './DidIdentifier';
