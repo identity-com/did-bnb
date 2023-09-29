@@ -302,10 +302,10 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     function _doesNativeControllerExist(address didIdentifier, address controller) internal view returns(int index) {
         DidState storage didState = didStates[didIdentifier];
-        for(uint32 i=0; i < didState.nativeControllers.length; i++) {
+        for(uint i=0; i < didState.nativeControllers.length; i++) {
             if(didState.nativeControllers[i] == controller) {
                 // Return index if controller found
-                return int32(i);
+                return int(i);
             }
         }
         return -1;
