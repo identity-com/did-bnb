@@ -160,7 +160,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         didRegistry.updateVerificationMethodFlags(user, 'default', uint16(uint16(1) << uint16(DIDRegistry.VerificationMethodFlagBitMask.DID_DOC_HIDDEN)));
     }
 
-    function test__revert_should_not_allow_adding_unknown_flag_to_verification_method() public {
+    function test_revert_should_not_allow_adding_unknown_flag_to_verification_method() public {
         address user = vm.addr(1);
 
         vm.startPrank(user); // Send transaction as the user
@@ -171,7 +171,7 @@ contract DidRegistryVerificationMethodTest is DidRegistryTest {
         DIDRegistry.VerificationMethod memory defaultVerificationMethod = didState.verificationMethods[0];
 
         // Add none supported flag
-        uint16 newFlags = defaultVerificationMethod.flags & uint16(uint16(1) << uint16(type(DIDRegistry.VerificationMethodFlagBitMask).max) + 1);
+        uint16 newFlags = defaultVerificationMethod.flags | uint16(uint16(1) << uint16(type(DIDRegistry.VerificationMethodFlagBitMask).max) + 2);
 
         vm.expectRevert("Attempted to add unsupported flag");
         didRegistry.updateVerificationMethodFlags(user, defaultVerificationMethod.fragment, newFlags);
