@@ -35,7 +35,7 @@ contract DidRegistryControllerTest is DidRegistryTest {
 
     function test_should_add_new_external_controller() public {
         address user = vm.addr(1);
-        string memory newController = "testExternalController";
+        string memory newController = "did:testExternalController";
 
         vm.startPrank(user); // Make transactions using users EOA
         didRegistry.initializeDidState(user);
@@ -49,7 +49,7 @@ contract DidRegistryControllerTest is DidRegistryTest {
 
     function test_should_remove_new_external_controller() public {
         address user = vm.addr(1);
-        string memory newController = "testExternalController";
+        string memory newController = "did:testExternalController";
 
         vm.startPrank(user); // Make transactions using users EOA
         didRegistry.initializeDidState(user);
@@ -60,6 +60,17 @@ contract DidRegistryControllerTest is DidRegistryTest {
 
         string[] memory controllers = didRegistry.resolveDidState(user).externalControllers;
         assertEq(controllers.length, 0);
+    }
+
+    function test_revert_should_fail_to_add_new_external_controller() public {
+        address user = vm.addr(1);
+        string memory newController = "testExternalController";
+
+        vm.startPrank(user); // Make transactions using users EOA
+        didRegistry.initializeDidState(user);
+
+        vm.expectRevert("Invalid prefix for external controller. External controls must start with did:");
+        didRegistry.addExternalController(user, newController);
     }
 
     function test_revert_should_fail_to_add_duplicate_native_controller() public {
@@ -101,7 +112,7 @@ contract DidRegistryControllerTest is DidRegistryTest {
 
     function test_revert_should_fail_to_add_duplicate_external_controller() public {
         address user = vm.addr(1);
-        string memory newController = "testExternalController";
+        string memory newController = "did:testExternalController";
 
         vm.startPrank(user); // Make transactions using users EOA
         didRegistry.initializeDidState(user);
