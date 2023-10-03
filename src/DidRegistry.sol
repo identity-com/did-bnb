@@ -15,13 +15,22 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     // Each flag is represented by a specific bit. This enum specifies what flag corresponds to which bit.
     enum VerificationMethodFlagBitMask {
+        /// The VM can be used for encryption
         KEY_AGREEMENT, // bit 0
+        /// The VM is able to authenticate the subject
         AUTHENTICATION, // bit 1
+        /// The VM is able to proof assertions on the subject
         ASSERTION, // bit 2
+        /// The VM can be used for issuing capabilities. Required for DID Update
         CAPABILITY_INVOCATION, // bit 3
+        /// The VM can be used for delegating capabilities.
         CAPABILITY_DELEGATION, // bit 4
+        /// The subject did proof to be in possession of the private key
         OWNERSHIP_PROOF, // bit 5
-        PROTECTED // bit 6
+        /// The Verification Method is marked as protected. This means it cannot be removed
+        PROTECTED, // bit 6
+        /// The VM is hidden from the DID Document (off-chain only)
+        DID_DOC_HIDDEN //bit 7
     }
 
     struct VerificationMethod {
@@ -101,6 +110,7 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
     function addVerificationMethod(address didIdentifier, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public {
 
         require(!_doesFragmentExist(didIdentifier, verificationMethod.fragment), "Fragment already exist");
+        require(_isValidFlag(verificationMethod.flags), "Attempted to add unsupported flag");
         
         // Apply a bitmask on the verificationMethodFlags
         bool hasOwnershipFlag =  _hasFlag(verificationMethod.flags, VerificationMethodFlagBitMask.OWNERSHIP_PROOF);
@@ -146,6 +156,7 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     function updateVerificationMethodFlags(address didIdentifier, string calldata fragment, uint16 flags) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
         require(_doesFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
+        require(_isValidFlag(flags), "Attempted to add unsupported flag");
 
         DidState storage didState = didStates[didIdentifier];
 
@@ -345,5 +356,10 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     function _hasFlag(uint16 flags, VerificationMethodFlagBitMask flag) internal pure returns(bool) {
         return flags & uint16(uint16(1) << uint16(flag)) != 0;
+    }
+
+    function _isValidFlag(uint16 flags) internal pure returns(bool) {
+        // Shifts the input flag by the amount of flags avalible.
+        return uint16(flags) >> (uint16(type(VerificationMethodFlagBitMask).max) + 1) == 0;
     }
 }

@@ -23,6 +23,7 @@ export enum BitwiseVerificationMethodFlag {
   CapabilityDelegation = 1 << 4,
   OwnershipProof = 1 << 5,
   Protected = 1 << 6,
+  DidDocHidden = 1 << 7,
 }
 
 export enum VerificationMethodType {
@@ -56,7 +57,7 @@ export type RawVerificationMethod = {
   keyData: string;
 };
 
-export type ChainEnviroment = 'mainnet' | 'testnet' | 'localnet'
+export type ChainEnviroment = 'mainnet' | 'testnet' | 'localnet';
 
 export type RawService = {
   fragment: string;
@@ -78,10 +79,9 @@ export const mapVerificationMethodsToDidComponents = (
   };
 
   for (const method of methods) {
-    // skip hidden methods (TODO: do we want to suppor this again?)
-    // if (method.flags.has(BitwiseVerificationMethodFlag.DidDocHidden)) {
-    //   continue;
-    // }
+    if (method.flags.has(BitwiseVerificationMethodFlag.DidDocHidden)) {
+      continue;
+    }
     if (method.flags.has(BitwiseVerificationMethodFlag.Authentication)) {
       didComponents.authentication.push(
         `${identifier.toString()}#${method.fragment}`
