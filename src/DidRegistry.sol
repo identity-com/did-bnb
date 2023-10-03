@@ -343,10 +343,11 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     function _doesExternalControllerHaveCorrectPrefix(string memory str) internal pure {
         bytes memory correctPrefix = bytes("did:");
+        bytes memory bytesString = bytes(str);
 
         // Get first 4 charecters in string
         for(uint i = 0; i < 4; i++) {
-            require(correctPrefix[i] == bytes(str)[i], "Invalid prefix for external controller. External controls must start with did:");
+            require(correctPrefix[i] == bytesString[i], "Invalid prefix for external controller. External controls must start with did:");
         }
     }
 
