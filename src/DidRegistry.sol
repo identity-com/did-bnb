@@ -15,13 +15,22 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     // Each flag is represented by a specific bit. This enum specifies what flag corresponds to which bit.
     enum VerificationMethodFlagBitMask {
+        /// The VM can be used for encryption
         KEY_AGREEMENT, // bit 0
+        /// The VM is able to authenticate the subject
         AUTHENTICATION, // bit 1
+        /// The VM is able to proof assertions on the subject
         ASSERTION, // bit 2
+        /// The VM can be used for issuing capabilities. Required for DID Update
         CAPABILITY_INVOCATION, // bit 3
+        /// The VM can be used for delegating capabilities.
         CAPABILITY_DELEGATION, // bit 4
+        /// The subject did proof to be in possession of the private key
         OWNERSHIP_PROOF, // bit 5
-        PROTECTED // bit 6
+        /// The Verification Method is marked as protected. This means it cannot be removed
+        PROTECTED, // bit 6
+        /// The VM is hidden from the DID Document (off-chain only)
+        DID_DOC_HIDDEN //bit 7
     }
 
     struct VerificationMethod {
@@ -101,6 +110,7 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
     function addVerificationMethod(address didIdentifier, VerificationMethod calldata verificationMethod) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public {
 
         require(!_doesFragmentExist(didIdentifier, verificationMethod.fragment), "Fragment already exist");
+        require(_isValidFlag(verificationMethod.flags), "Attempted to add unsupported flag");
         
         // Apply a bitmask on the verificationMethodFlags
         bool hasOwnershipFlag =  _hasFlag(verificationMethod.flags, VerificationMethodFlagBitMask.OWNERSHIP_PROOF);
@@ -146,6 +156,7 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     function updateVerificationMethodFlags(address didIdentifier, string calldata fragment, uint16 flags) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
         require(_doesFragmentExist(didIdentifier, fragment), "Fragment does not match any verification methods with this did");
+        require(_isValidFlag(flags), "Attempted to add unsupported flag");
 
         DidState storage didState = didStates[didIdentifier];
 
@@ -203,55 +214,50 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
     }
 
     function addNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public {
-        require(!_doesNativeControllerExist(didIdentifier,controller), "Native controller already exist");
+        require(_doesNativeControllerExist(didIdentifier,controller) == -1, "Native controller already exist");
         didStates[didIdentifier].nativeControllers.push(controller);
         
         emit ControllerAdded(didIdentifier, abi.encodePacked(controller), true);
     }
 
-    function removeNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
+    function removeNativeController(address didIdentifier, address controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public  {
         require(didIdentifier != controller, "Cannot remove default authority key");
-        require(_doesNativeControllerExist(didIdentifier,controller), "Native controller does not exist");
+
+        // If an index is returned the controller exits
+        int index = _doesNativeControllerExist(didIdentifier,controller);
+        require(index >= 0, "Native controller does not exist");
 
         DidState storage didState = didStates[didIdentifier];
 
-        for(uint i=0; i < didState.nativeControllers.length; i++) {
-            if(didState.nativeControllers[i] == controller) {
-                // Remove native controller from array (not built into solidity so manipulating array to remove)
-                didState.nativeControllers[i] = didState.nativeControllers[didState.nativeControllers.length - 1];
-                didState.nativeControllers.pop();
+        // Remove native controller from array (not built into solidity so manipulating array to remove)
+        didState.nativeControllers[uint(index)] = didState.nativeControllers[didState.nativeControllers.length - 1];
+        didState.nativeControllers.pop();
 
-                emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), true);
-                return true;
-            }
-        }
-        return false;
+        emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), true);
     }
 
      function addExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public  {
-        require(!_doesExternalControllerExist(didIdentifier,controller), "External controller already exist");
         _doesExternalControllerHaveCorrectPrefix(controller);
+        require(_doesExternalControllerExist(didIdentifier,controller) == -1, "External controller already exist");
         didStates[didIdentifier].externalControllers.push(controller);
 
         emit ControllerAdded(didIdentifier, abi.encodePacked(controller), false);
     }
 
-    function removeExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public returns(bool) {
-        require(_doesExternalControllerExist(didIdentifier,controller), "External controller does not exist");
+    function removeExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public {
+        
+        // If an index is returned the controller exits
+        int index = _doesExternalControllerExist(didIdentifier,controller);
+        require(index >= 0, "External controller does not exist");
 
         DidState storage didState = didStates[didIdentifier];
 
-        for(uint i=0; i < didState.externalControllers.length; i++) {
-            if(_stringCompare(didState.externalControllers[i], controller)) {
-                // Remove native controller from array (not built into solidity so manipulating array to remove)
-                didState.externalControllers[i] = didState.externalControllers[didState.externalControllers.length - 1];
-                didState.externalControllers.pop();
 
-                emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), false);
-                return true;
-            }
-        }
-        return false;
+        // Remove native controller from array (not built into solidity so manipulating array to remove)
+        didState.externalControllers[uint(index)] = didState.externalControllers[didState.externalControllers.length - 1];
+        didState.externalControllers.pop();
+
+        emit ControllerRemoved(didIdentifier, abi.encodePacked(controller), false);
     }
 
     function _isKeyAuthority(address didIdentifier, address authority) internal view returns(bool) {
@@ -309,24 +315,25 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
         return false;
     }
 
-    function _doesNativeControllerExist(address didIdentifier, address controller) internal view returns(bool) {
+    function _doesNativeControllerExist(address didIdentifier, address controller) internal view returns(int index) {
         DidState storage didState = didStates[didIdentifier];
         for(uint i=0; i < didState.nativeControllers.length; i++) {
             if(didState.nativeControllers[i] == controller) {
-                return true;
+                // Return index if controller found
+                return int(i);
             }
         }
-        return false;
+        return -1;
     }
 
-    function _doesExternalControllerExist(address didIdentifier, string calldata controller) internal view returns(bool) {
+    function _doesExternalControllerExist(address didIdentifier, string calldata controller) internal view returns(int index) {
         DidState storage didState = didStates[didIdentifier];
         for(uint i=0; i < didState.externalControllers.length; i++) {
             if(_stringCompare(didState.externalControllers[i], controller)) {
-                return true;
+                return int(i);
             }
         }
-        return false;
+        return -1;
     }
 
     function _hasAuthorityVerificationMethod(address didIdentifier) internal view returns(bool) {
@@ -360,5 +367,10 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
 
     function _hasFlag(uint16 flags, VerificationMethodFlagBitMask flag) internal pure returns(bool) {
         return flags & uint16(uint16(1) << uint16(flag)) != 0;
+    }
+
+    function _isValidFlag(uint16 flags) internal pure returns(bool) {
+        // Shifts the input flag by the amount of flags avalible.
+        return uint16(flags) >> (uint16(type(VerificationMethodFlagBitMask).max) + 1) == 0;
     }
 }
