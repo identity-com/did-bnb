@@ -237,6 +237,7 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
     }
 
      function addExternalController(address didIdentifier, string calldata controller) onlyNonGenerativeDid(didIdentifier) onlyAuthorizedKeys(didIdentifier) public  {
+        _doesExternalControllerHaveCorrectPrefix(controller);
         require(_doesExternalControllerExist(didIdentifier,controller) == -1, "External controller already exist");
         didStates[didIdentifier].externalControllers.push(controller);
 
@@ -345,6 +346,16 @@ contract DIDRegistry is IDidRegistry, Initializable, UUPSUpgradeable, OwnableUpg
         }
 
         return false;
+    }
+
+    function _doesExternalControllerHaveCorrectPrefix(string memory str) internal pure {
+        bytes memory correctPrefix = bytes("did:");
+        bytes memory bytesString = bytes(str);
+
+        // Get first 4 charecters in string
+        for(uint i = 0; i < 4; i++) {
+            require(correctPrefix[i] == bytesString[i], "Invalid prefix for external controller. External controls must start with did:");
+        }
     }
 
     function _stringCompare(string memory str1, string memory str2) internal pure returns (bool) {
