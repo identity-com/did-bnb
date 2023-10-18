@@ -45,7 +45,10 @@ const config: HardhatUserConfig = {
     }
   },
   etherscan: {
-    apiKey: process.env.BNB_EXPLORER_API_KEY!
+    apiKey: { 
+      bscTestnet: process.env.BNB_EXPLORER_API_KEY!,
+      bsc: process.env.BNB_EXPLORER_API_KEY!
+    }
   },
   preprocess: {
     eachLine: (hre) => ({

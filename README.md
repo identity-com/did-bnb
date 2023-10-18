@@ -205,9 +205,9 @@ Deployments are automatically triggered on every merge to the `main` branch via 
 #### Bnb mainnet
 Deployments are manually triggered via a github action. Before deployments please ensure the relayer has enough BNB. 
 
-- Relayer address: TBD
+- Relayer address: 0xF4550214AA98a7DE728F4eAef0672cD0D2F10B2a
 
-- DidRegistry proxy address: TBD
+- DidRegistry proxy address: [0x3e366D776150c63Eb53C6675734070696403BEe9](https://bscscan.com/address/0x3e366D776150c63Eb53C6675734070696403BEe9)
 
 
 #### Local deployment
