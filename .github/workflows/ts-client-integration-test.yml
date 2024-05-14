@@ -26,6 +26,10 @@ jobs:
         working-directory: ./ts-client
         run: yarn install --frozen-lockfile
 
+      - name: Build typechain types
+        working-directory: ./ts-client
+        run: yarn postinstall:manual
+
       - name: Run Anvil Node
         run: anvil &
 
