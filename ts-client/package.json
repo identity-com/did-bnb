@@ -1,6 +1,6 @@
 {
   "name": "@identity.com/did-bnb-client",
-  "version": "2.0.1-beta",
+  "version": "2.0.2-beta",
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "/npm-shrinkwrap.json"
   ],
   "scripts": {
-    "postinstall": "node ./scripts/shouldRunPostInstall.ts || $npm_execpath run generate-contract-types",
+    "postinstall:manual": "$npm_execpath run generate-contract-types",
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
     "clean": "shx rm -rf ./dist",
